@@ -192,7 +192,7 @@ jobs:
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ env.BUILD_TYPE }}
           BUILD_END=$(date +%s)
           echo "::endgroup::"
-          echo "⏱️ Build took $((BUILD_END - BUILD_START)) seconds"
+          echo "⏱️ Build took $((BUILD_END - BUILD_START)) seconds (Run 2 - with ccache)"
           echo "BUILD_TIME=$((BUILD_END - BUILD_START))" >> $GITHUB_ENV
 
       - name: 📊 ccache statistics
