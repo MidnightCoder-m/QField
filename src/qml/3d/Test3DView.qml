@@ -103,13 +103,19 @@ Item {
         roughness: 0.5
       }
     }
+
+    // Origin point for camera orbit
+    Node {
+      id: originNode
+      position: Qt.vector3d(0, 50, 0)
+    }
   }
 
   // Simple orbit camera controller
   OrbitCameraController {
     id: cameraController
     anchors.fill: parent
-    origin: Qt.vector3d(0, 50, 0)
+    origin: originNode
     camera: camera
   }
 

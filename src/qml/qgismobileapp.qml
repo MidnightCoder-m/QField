@@ -58,6 +58,9 @@ ApplicationWindow {
   property double sceneLeftMargin: SafeArea.margins.left
   property double sceneRightMargin: SafeArea.margins.right
 
+  // 3D View toggle (Phase 0)
+  property bool show3DView: false
+
   onSceneLoadedChanged: {
     // This requires the scene to be fully loaded not to crash due to possibility of
     // a thread blocking permission request being thrown
@@ -630,8 +633,6 @@ ApplicationWindow {
     }
 
     // 3D View Test (Phase 0)
-    property bool show3DView: false
-
     Loader {
       id: test3DViewLoader
       anchors.fill: parent
@@ -1970,7 +1971,7 @@ ApplicationWindow {
       QfToolButton {
         id: toggle3DButton
         round: true
-        iconSource: Theme.getThemeVectorIcon("ic_hillshade_black_24dp")
+        iconSource: Theme.getThemeVectorIcon("ic_elevation_white_24dp")
         bgcolor: mainWindow.show3DView ? Theme.mainColor : Theme.darkGray
 
         onClicked: {
