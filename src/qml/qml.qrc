@@ -156,5 +156,6 @@
         <file>3d/Test3DView.qml</file>
         <file>3d/Map3DView.qml</file>
         <file>3d/ProceduralTerrain.qml</file>
+        <file>3d/TouchCameraController.qml</file>
     </qresource>
 </RCC>

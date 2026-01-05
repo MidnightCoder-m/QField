@@ -161,12 +161,17 @@ Item {
     }
   }
 
-  // Touch-friendly camera controller
-  OrbitCameraController {
+  // Custom touch-friendly camera controller
+  TouchCameraController {
     id: cameraController
     anchors.fill: parent
-    origin: originNode
     camera: camera
+    target: Qt.vector3d(0, 50, 0)
+    distance: 800
+    pitch: -30
+    yaw: 0
+    minDistance: 50
+    maxDistance: 3000
   }
 
   // Debug overlay
@@ -202,7 +207,7 @@ Item {
       Text {
         color: "#aaa"
         font.pixelSize: 10
-        text: "Drag: rotate | Pinch: zoom"
+        text: "1 finger: orbit | 2 fingers: pan+zoom | Double tap: reset"
       }
     }
   }
