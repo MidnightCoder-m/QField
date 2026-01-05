@@ -58,6 +58,9 @@ ApplicationWindow {
   property double sceneLeftMargin: SafeArea.margins.left
   property double sceneRightMargin: SafeArea.margins.right
 
+  // 3D View toggle (Phase 0)
+  property bool show3DView: false
+
   onSceneLoadedChanged: {
     // This requires the scene to be fully loaded not to crash due to possibility of
     // a thread blocking permission request being thrown
@@ -627,6 +630,29 @@ ApplicationWindow {
       id: mapCanvasBackground
       anchors.fill: parent
       color: mapCanvas.mapSettings.backgroundColor
+    }
+
+    // 3D Map View (Phase 2 - Real DEM support)
+    Loader {
+      id: map3DViewLoader
+      anchors.fill: parent
+      active: mainWindow.show3DView
+      visible: active
+      z: 100  // Above map canvas
+
+      source: "qrc:/qml/3d/Map3DView.qml"
+
+      onLoaded: {
+        // Pass QGIS project to 3D view
+        Qt.callLater(function () {
+            try {
+              item.qgisProject = qgisProject;
+            } catch (e) {
+              console.log("3D ERROR:", e);
+            }
+          });
+        displayToast(qsTr("3D Map View loaded!"));
+      }
     }
 
     GridRenderer {
@@ -1958,6 +1984,22 @@ ApplicationWindow {
       anchors.leftMargin: mainWindow.sceneLeftMargin + 4
       anchors.topMargin: 4
       spacing: 4
+
+      // 3D View Toggle Button
+      QfToolButton {
+        id: toggle3DButton
+        round: true
+        width: 48
+        height: 48
+        iconSource: Theme.getThemeVectorIcon("ic_elevation_white_24dp")
+        iconColor: "white"
+        bgcolor: mainWindow.show3DView ? Theme.mainColor : Theme.darkGray
+
+        onClicked: {
+          mainWindow.show3DView = !mainWindow.show3DView;
+          displayToast(mainWindow.show3DView ? qsTr("3D View ON") : qsTr("3D View OFF"));
+        }
+      }
 
       QfToolButtonDrawer {
         name: "digitizingDrawer"
