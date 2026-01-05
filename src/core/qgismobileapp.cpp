@@ -120,6 +120,7 @@
 #include "qgsproviderregistry.h"
 #include "qgsprovidersublayerdetails.h"
 #include "qgsquick3dterraingeometry.h"
+#include "qgsquick3dterrainprovider.h"
 #include "qgsquickcoordinatetransformer.h"
 #include "qgsquickelevationprofilecanvas.h"
 #include "qgsquickmapcanvasmap.h"
@@ -459,6 +460,7 @@ void QgisMobileapp::initDeclarative( QQmlEngine *engine )
 
   // Register 3D QML types
   qmlRegisterType<QgsQuick3DTerrainGeometry>( "org.qfield", 1, 0, "QgsQuick3DTerrainGeometry" );
+  qmlRegisterType<QgsQuick3DTerrainProvider>( "org.qfield", 1, 0, "QgsQuick3DTerrainProvider" );
 
   // Register QField QML types
   qRegisterMetaType<PlatformUtilities::Capabilities>( "PlatformUtilities::Capabilities" );

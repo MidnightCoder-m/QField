@@ -54,6 +54,9 @@ Item {
 
   // Update camera position from spherical coordinates
   function updateCameraPosition() {
+    if (!camera) {
+      return;
+    }
     var pitchRad = pitch * Math.PI / 180;
     var yawRad = yaw * Math.PI / 180;
     var x = target.x + distance * Math.cos(pitchRad) * Math.sin(yawRad);

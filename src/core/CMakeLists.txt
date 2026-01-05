@@ -5,6 +5,7 @@ set(QFIELD_CORE_SRCS
     cogo/cogoregistry.cpp
     platforms/platformutilities.cpp
     sketquick3d/qgsquick3dterraingeometry.cpp
+    sketquick3d/qgsquick3dterrainprovider.cpp
     utils/coordinatereferencesystemutils.cpp
     utils/expressioncontextutils.cpp
     utils/featureutils.cpp

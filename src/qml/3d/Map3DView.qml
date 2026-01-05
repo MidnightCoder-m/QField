@@ -1,21 +1,114 @@
 import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
+import org.qfield 1.0
 
 /**
  * Map3DView - Main 3D map viewer component
- * Phase 1: Procedural terrain with touch controls
+ * Phase 2: Real DEM terrain from QGIS project
  */
 Item {
   id: root
+
+  // Ensure this item captures all input when visible
+  focus: true
+
+  Component.onCompleted:
+  // 3D view initialized
+  {
+  }
 
   // Public properties
   property bool debugMode: true
   property color skyColor: "#87CEEB"
   property color groundColor: "#4a7c4e"
-  property real terrainSize: 1000
+  property real terrainSize: 2000
   property real terrainHeight: 100
-  property real verticalExaggeration: 1.5
+  property real verticalExaggeration: 0.1  // Reduced for real DEM data
+
+  // QGIS project for real terrain data
+  property var qgisProject: null
+  property rect mapExtent: Qt.rect(0, 0, 0, 0)
+
+  // Whether to use real DEM or procedural terrain
+  property bool useRealTerrain: qgisProject !== null && terrainProvider.hasTerrainData
+
+  onMapExtentChanged: {
+    // When extent becomes valid, try to load real terrain
+    if (mapExtent.width > 0 && mapExtent.height > 0 && terrainProvider.hasTerrainData) {
+      Qt.callLater(loadRealTerrain);
+    }
+  }
+
+  // Terrain data provider (reads from QGIS project)
+  QgsQuick3DTerrainProvider {
+    id: terrainProvider
+    project: root.qgisProject
+    resolution: 64
+    verticalExaggeration: root.verticalExaggeration
+    extent: root.mapExtent
+
+    onTerrainDataReady: {
+      // Use DEM extent if available (more accurate than map extent)
+      var demExt = terrainProvider.demExtent;
+      if (demExt && demExt.width > 0 && demExt.height > 0) {
+        root.mapExtent = demExt;
+        terrainProvider.extent = demExt;
+      }
+
+      // Skip if extent is still invalid
+      if (root.mapExtent.width <= 0 || root.mapExtent.height <= 0) {
+        return;
+      }
+      if (hasTerrainData) {
+        Qt.callLater(loadRealTerrain);
+      }
+    }
+  }
+
+  // Function to load real terrain data (called async)
+  function loadRealTerrain() {
+    try {
+      var heights = terrainProvider.sampleHeightGrid();
+      if (heights.length === 0) {
+        return;
+      }
+
+      // Find min/max to normalize heights
+      var minH = Number.MAX_VALUE;
+      var maxH = Number.MIN_VALUE;
+      for (var i = 0; i < heights.length; i++) {
+        if (heights[i] < minH)
+          minH = heights[i];
+        if (heights[i] > maxH)
+          maxH = heights[i];
+      }
+      var heightRange = maxH - minH;
+
+      // Normalize heights for display (scale to fit in view)
+      // Keep terrainSize at 2000 for consistent camera behavior
+      // Scale heights proportionally
+      if (heightRange > 0) {
+        var normalizedHeights = [];
+        // Target height should be visible but not overwhelming
+        // Use 30% of terrainSize as max height
+        var targetMaxHeight = root.terrainSize * 0.3;
+        var scale = targetMaxHeight / heightRange;
+        for (var j = 0; j < heights.length; j++) {
+          normalizedHeights.push((heights[j] - minH) * scale);
+        }
+        heights = normalizedHeights;
+      }
+      terrainMesh.heightData = heights;
+      terrainMesh.proceduralOnLoad = false;
+
+      // Update internal cache for display
+      internal.minHeight = minH;
+      internal.maxHeight = maxH;
+    } catch (e) {
+      console.log("3D ERROR:", e);
+    }
+  }
 
   View3D {
     id: view3d
@@ -32,10 +125,10 @@ Item {
     // Main camera
     PerspectiveCamera {
       id: camera
-      position: Qt.vector3d(0, 400, 600)
-      eulerRotation: Qt.vector3d(-30, 0, 0)
+      position: Qt.vector3d(0, 1000, 1600)
+      eulerRotation: Qt.vector3d(-35, 0, 0)
       clipNear: 1
-      clipFar: 10000
+      clipFar: 50000
       fieldOfView: 60
     }
 
@@ -59,113 +152,12 @@ Item {
     // Real terrain mesh (C++ geometry)
     TerrainMesh {
       id: terrainMesh
-      position: Qt.vector3d(0, -50, 0)  // Lower the terrain base
+      position: Qt.vector3d(0, 0, 0)
       resolution: 64
       terrainSize: root.terrainSize
-      heightScale: root.terrainHeight * root.verticalExaggeration * 0.5  // Reduce height
+      heightScale: 1.0  // Heights are already normalized in loadRealTerrain()
       baseColor: root.groundColor
       proceduralOnLoad: true
-    }
-
-    // Legacy procedural terrain (QML-only, for fallback)
-    ProceduralTerrain {
-      id: proceduralTerrain
-      visible: false  // Disabled, using TerrainMesh instead
-      terrainSize: root.terrainSize
-      terrainHeight: root.terrainHeight * root.verticalExaggeration
-      gridResolution: 64
-      baseColor: root.groundColor
-    }
-
-    // Sample buildings on terrain
-    Node {
-      id: buildingsNode
-      position: Qt.vector3d(0, 20, 0)  // Raise buildings above terrain
-
-      // Building 1 - tall
-      Model {
-        source: "#Cube"
-        position: Qt.vector3d(100, 35, -50)
-        scale: Qt.vector3d(0.4, 0.7, 0.4)
-        materials: PrincipledMaterial {
-          baseColor: "#e74c3c"
-          roughness: 0.7
-        }
-      }
-
-      // Building 2 - medium
-      Model {
-        source: "#Cube"
-        position: Qt.vector3d(-80, 25, 100)
-        scale: Qt.vector3d(0.5, 0.5, 0.5)
-        materials: PrincipledMaterial {
-          baseColor: "#3498db"
-          roughness: 0.6
-        }
-      }
-
-      // Building 3 - wide
-      Model {
-        source: "#Cube"
-        position: Qt.vector3d(50, 20, 150)
-        scale: Qt.vector3d(0.8, 0.4, 0.6)
-        materials: PrincipledMaterial {
-          baseColor: "#f39c12"
-          roughness: 0.5
-        }
-      }
-
-      // Building 4 - small
-      Model {
-        source: "#Cube"
-        position: Qt.vector3d(-150, 15, -100)
-        scale: Qt.vector3d(0.3, 0.3, 0.3)
-        materials: PrincipledMaterial {
-          baseColor: "#9b59b6"
-          roughness: 0.6
-        }
-      }
-
-      // Building 5
-      Model {
-        source: "#Cube"
-        position: Qt.vector3d(200, 30, 50)
-        scale: Qt.vector3d(0.6, 0.6, 0.4)
-        materials: PrincipledMaterial {
-          baseColor: "#1abc9c"
-          roughness: 0.5
-        }
-      }
-    }
-
-    // Point markers (trees as cones)
-    Node {
-      id: treesNode
-      position: Qt.vector3d(0, 20, 0)  // Raise trees above terrain
-
-      Repeater3D {
-        model: 20
-        Model {
-          source: "#Cone"
-          position: Qt.vector3d(Math.sin(index * 1.3) * 300, 12, Math.cos(index * 1.7) * 300)
-          scale: Qt.vector3d(0.15, 0.25, 0.15)
-          materials: PrincipledMaterial {
-            baseColor: "#27ae60"
-            roughness: 0.8
-          }
-        }
-      }
-    }
-
-    // Road (as a stretched cube for now)
-    Model {
-      source: "#Cube"
-      position: Qt.vector3d(0, 22, 0)  // Raise road above terrain
-      scale: Qt.vector3d(5, 0.02, 0.15)
-      materials: PrincipledMaterial {
-        baseColor: "#34495e"
-        roughness: 0.9
-      }
     }
 
     // Origin marker for camera controller
@@ -219,10 +211,39 @@ Item {
       }
 
       Text {
+        color: root.useRealTerrain ? "#4CAF50" : "#FFC107"
+        font.pixelSize: 11
+        text: "Terrain: " + (root.useRealTerrain ? "DEM (" + terrainProvider.terrainType + ")" : "Procedural")
+      }
+
+      Text {
+        visible: root.useRealTerrain
+        color: "#aaa"
+        font.pixelSize: 10
+        text: "Heights: " + internal.minHeight.toFixed(0) + " - " + internal.maxHeight.toFixed(0) + " m"
+      }
+
+      Text {
         color: "#aaa"
         font.pixelSize: 10
         text: "1 finger: orbit | 2 fingers: pan+zoom | Double tap: reset"
       }
+    }
+  }
+
+  // Internal state to cache terrain stats (avoid calling every frame)
+  QtObject {
+    id: internal
+    property real minHeight: 0
+    property real maxHeight: 0
+  }
+
+  Connections {
+    target: terrainProvider
+    function onTerrainDataReady() {
+      var stats = terrainProvider.terrainStats();
+      internal.minHeight = stats.minHeight || 0;
+      internal.maxHeight = stats.maxHeight || 0;
     }
   }
 
@@ -246,8 +267,13 @@ Item {
 
     MouseArea {
       anchors.fill: parent
+      z: 1000  // Ensure it's on top
       onClicked: {
+        console.log("3D: Close button clicked!");
         mainWindow.show3DView = false;
+      }
+      onPressed: {
+        console.log("3D: Close button pressed");
       }
     }
   }
@@ -267,7 +293,7 @@ Item {
       anchors.centerIn: parent
       color: "white"
       font.pixelSize: 13
-      text: "🏔️ Phase 1: Procedural Terrain Demo"
+      text: root.useRealTerrain ? "🗺️ Phase 2: Real DEM Terrain" : "🏔️ Phase 1: Procedural Terrain Demo"
     }
   }
 }

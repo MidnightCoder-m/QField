@@ -632,7 +632,7 @@ ApplicationWindow {
       color: mapCanvas.mapSettings.backgroundColor
     }
 
-    // 3D Map View (Phase 1)
+    // 3D Map View (Phase 2 - Real DEM support)
     Loader {
       id: map3DViewLoader
       anchors.fill: parent
@@ -643,6 +643,28 @@ ApplicationWindow {
       source: "qrc:/qml/3d/Map3DView.qml"
 
       onLoaded: {
+        // Delay property setting to avoid signal storms during initialization
+        Qt.callLater(function () {
+            try {
+              // Pass QGIS project and map extent to 3D view
+              item.qgisProject = qgisProject;
+
+              // Get current map extent
+              var ms = mapCanvas.mapSettings;
+              if (ms && ms.extent) {
+                var extent = ms.extent;
+                if (extent.width > 0 && extent.height > 0) {
+                  item.mapExtent = Qt.rect(extent.xMinimum, extent.yMinimum, extent.width, extent.height);
+
+                  // Adjust terrain size based on extent
+                  var maxSize = Math.max(extent.width, extent.height);
+                  item.terrainSize = Math.min(maxSize / 10, 2000);  // Scale down for 3D
+                }
+              }
+            } catch (e) {
+              console.log("3D ERROR:", e);
+            }
+          });
         displayToast(qsTr("3D Map View loaded!"));
       }
     }

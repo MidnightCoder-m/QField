@@ -16,11 +16,66 @@ Node {
   property real terrainSize: 1000
   property real heightScale: 100
   property color baseColor: "#4a7c4e"
-  property real roughness: 0.9
+  property real roughness: 0.85
   property var heightData: []
 
   // Generate procedural terrain on load
   property bool proceduralOnLoad: true
+
+  // Procedural grass texture (generated at runtime)
+  Texture {
+    id: grassTexture
+    sourceItem: Canvas {
+      id: grassCanvas
+      width: 256
+      height: 256
+
+      onPaint: {
+        var ctx = getContext("2d");
+
+        // Base green gradient
+        var gradient = ctx.createLinearGradient(0, 0, 256, 256);
+        gradient.addColorStop(0.0, "#3d6b3d");
+        gradient.addColorStop(0.3, "#4a7c4e");
+        gradient.addColorStop(0.6, "#5a8a5a");
+        gradient.addColorStop(1.0, "#4a7c4e");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Add noise/variation
+        for (var i = 0; i < 500; i++) {
+          var x = Math.random() * 256;
+          var y = Math.random() * 256;
+          var size = Math.random() * 3 + 1;
+          var brightness = Math.random() * 40 - 20;
+          var r = 74 + brightness;
+          var g = 124 + brightness;
+          var b = 78 + brightness;
+          ctx.fillStyle = "rgb(" + Math.floor(r) + "," + Math.floor(g) + "," + Math.floor(b) + ")";
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Add some darker patches
+        for (var j = 0; j < 20; j++) {
+          var px = Math.random() * 256;
+          var py = Math.random() * 256;
+          var pr = Math.random() * 20 + 10;
+          ctx.fillStyle = "rgba(40, 60, 40, 0.3)";
+          ctx.beginPath();
+          ctx.arc(px, py, pr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      Component.onCompleted: requestPaint()
+    }
+    scaleU: 10
+    scaleV: 10
+    tilingModeHorizontal: Texture.Repeat
+    tilingModeVertical: Texture.Repeat
+  }
 
   Model {
     id: terrainModel
@@ -40,9 +95,10 @@ Node {
 
     materials: PrincipledMaterial {
       id: terrainMaterial
-      baseColor: root.baseColor
+      baseColorMap: grassTexture
       roughness: root.roughness
       metalness: 0.0
+      normalStrength: 0.3
     }
   }
 
@@ -50,6 +106,12 @@ Node {
   onHeightDataChanged: {
     if (heightData.length > 0) {
       terrainGeometry.heightData = heightData;
+    }
+  }
+
+  onProceduralOnLoadChanged: {
+    if (proceduralOnLoad) {
+      terrainGeometry.generateProceduralTerrain();
     }
   }
 
