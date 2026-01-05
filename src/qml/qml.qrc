@@ -153,5 +153,6 @@
         <file>PluginItem.qml</file>
         <file>InformationDrawer.qml</file>
         <file>QFieldGuide.qml</file>
+        <file>3d/Test3DView.qml</file>
     </qresource>
 </RCC>

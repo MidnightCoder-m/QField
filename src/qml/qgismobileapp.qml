@@ -629,6 +629,23 @@ ApplicationWindow {
       color: mapCanvas.mapSettings.backgroundColor
     }
 
+    // 3D View Test (Phase 0)
+    property bool show3DView: false
+
+    Loader {
+      id: test3DViewLoader
+      anchors.fill: parent
+      active: mainWindow.show3DView
+      visible: active
+      z: 100  // Above map canvas
+
+      source: "qrc:/qml/3d/Test3DView.qml"
+
+      onLoaded: {
+        displayToast(qsTr("3D View loaded!"));
+      }
+    }
+
     GridRenderer {
       mapSettings: mapCanvas.mapSettings
       enabled: !gridDecoration.enabled
@@ -1947,6 +1964,19 @@ ApplicationWindow {
         toolText: qsTr('Cancel addition')
 
         onClicked: digitizingToolbar.cancel()
+      }
+
+      // 3D View Toggle Button (Phase 0 - Test)
+      QfToolButton {
+        id: toggle3DButton
+        round: true
+        iconSource: Theme.getThemeVectorIcon("ic_hillshade_black_24dp")
+        bgcolor: mainWindow.show3DView ? Theme.mainColor : Theme.darkGray
+
+        onClicked: {
+          mainWindow.show3DView = !mainWindow.show3DView;
+          displayToast(mainWindow.show3DView ? qsTr("3D View ON") : qsTr("3D View OFF"));
+        }
       }
     }
 
