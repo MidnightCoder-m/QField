@@ -56,9 +56,21 @@ Item {
       castsShadow: false
     }
 
-    // Procedural terrain
+    // Real terrain mesh (C++ geometry)
+    TerrainMesh {
+      id: terrainMesh
+      position: Qt.vector3d(0, -50, 0)  // Lower the terrain base
+      resolution: 64
+      terrainSize: root.terrainSize
+      heightScale: root.terrainHeight * root.verticalExaggeration * 0.5  // Reduce height
+      baseColor: root.groundColor
+      proceduralOnLoad: true
+    }
+
+    // Legacy procedural terrain (QML-only, for fallback)
     ProceduralTerrain {
-      id: terrain
+      id: proceduralTerrain
+      visible: false  // Disabled, using TerrainMesh instead
       terrainSize: root.terrainSize
       terrainHeight: root.terrainHeight * root.verticalExaggeration
       gridResolution: 64
@@ -68,6 +80,7 @@ Item {
     // Sample buildings on terrain
     Node {
       id: buildingsNode
+      position: Qt.vector3d(0, 20, 0)  // Raise buildings above terrain
 
       // Building 1 - tall
       Model {
@@ -128,6 +141,7 @@ Item {
     // Point markers (trees as cones)
     Node {
       id: treesNode
+      position: Qt.vector3d(0, 20, 0)  // Raise trees above terrain
 
       Repeater3D {
         model: 20
@@ -146,7 +160,7 @@ Item {
     // Road (as a stretched cube for now)
     Model {
       source: "#Cube"
-      position: Qt.vector3d(0, 2, 0)
+      position: Qt.vector3d(0, 22, 0)  // Raise road above terrain
       scale: Qt.vector3d(5, 0.02, 0.15)
       materials: PrincipledMaterial {
         baseColor: "#34495e"
