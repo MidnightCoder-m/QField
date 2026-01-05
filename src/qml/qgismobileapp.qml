@@ -632,18 +632,18 @@ ApplicationWindow {
       color: mapCanvas.mapSettings.backgroundColor
     }
 
-    // 3D View Test (Phase 0)
+    // 3D Map View (Phase 1)
     Loader {
-      id: test3DViewLoader
+      id: map3DViewLoader
       anchors.fill: parent
       active: mainWindow.show3DView
       visible: active
       z: 100  // Above map canvas
 
-      source: "qrc:/qml/3d/Test3DView.qml"
+      source: "qrc:/qml/3d/Map3DView.qml"
 
       onLoaded: {
-        displayToast(qsTr("3D View loaded!"));
+        displayToast(qsTr("3D Map View loaded!"));
       }
     }
 
