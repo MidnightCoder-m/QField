@@ -1966,19 +1966,6 @@ ApplicationWindow {
 
         onClicked: digitizingToolbar.cancel()
       }
-
-      // 3D View Toggle Button (Phase 0 - Test)
-      QfToolButton {
-        id: toggle3DButton
-        round: true
-        iconSource: Theme.getThemeVectorIcon("ic_elevation_white_24dp")
-        bgcolor: mainWindow.show3DView ? Theme.mainColor : Theme.darkGray
-
-        onClicked: {
-          mainWindow.show3DView = !mainWindow.show3DView;
-          displayToast(mainWindow.show3DView ? qsTr("3D View ON") : qsTr("3D View OFF"));
-        }
-      }
     }
 
     Column {
@@ -1989,6 +1976,22 @@ ApplicationWindow {
       anchors.leftMargin: mainWindow.sceneLeftMargin + 4
       anchors.topMargin: 4
       spacing: 4
+
+      // 3D View Toggle Button
+      QfToolButton {
+        id: toggle3DButton
+        round: true
+        width: 48
+        height: 48
+        iconSource: Theme.getThemeVectorIcon("ic_elevation_white_24dp")
+        iconColor: "white"
+        bgcolor: mainWindow.show3DView ? Theme.mainColor : Theme.darkGray
+
+        onClicked: {
+          mainWindow.show3DView = !mainWindow.show3DView;
+          displayToast(mainWindow.show3DView ? qsTr("3D View ON") : qsTr("3D View OFF"));
+        }
+      }
 
       QfToolButtonDrawer {
         name: "digitizingDrawer"
