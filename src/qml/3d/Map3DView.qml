@@ -5,7 +5,7 @@ import org.qfield 1.0
 
 /**
  * Map3DView - Main 3D map viewer component
- * Phase 2: Real DEM terrain from QGIS project
+ * Phase 2.5: Real DEM terrain with satellite/aerial imagery draping
  */
 Item {
   id: root
@@ -33,10 +33,43 @@ Item {
   // Whether to use real DEM or procedural terrain
   property bool useRealTerrain: qgisProject !== null && terrainProvider.hasTerrainData
 
+  // Whether satellite texture is ready
+  property bool hasSatelliteTexture: textureGenerator.ready
+
   onMapExtentChanged: {
     // When extent becomes valid, try to load real terrain
     if (mapExtent.width > 0 && mapExtent.height > 0 && terrainProvider.hasTerrainData) {
       Qt.callLater(loadRealTerrain);
+    }
+  }
+
+  // Map texture generator for draping satellite/aerial imagery
+  QgsQuick3DMapTextureGenerator {
+    id: textureGenerator
+    project: root.qgisProject
+    extent: root.mapExtent
+    textureSize: 2048  // High quality texture
+
+    onReadyChanged: {
+      if (ready) {
+        console.log("3D: Satellite texture ready! Loading from file:", textureFilePath);
+        // Load texture from file instead of image provider (more reliable for 3D)
+        satelliteTexture.source = "file://" + textureFilePath;
+      }
+    }
+
+    onRenderError: function (error) {
+      console.log("3D: Texture render error:", error);
+    }
+  }
+
+  // Satellite texture loaded from file
+  Texture {
+    id: satelliteTexture
+    source: ""
+
+    onSourceChanged: {
+      console.log("3D: Texture source changed to:", source);
     }
   }
 
@@ -105,6 +138,11 @@ Item {
       // Update internal cache for display
       internal.minHeight = minH;
       internal.maxHeight = maxH;
+
+      // Trigger satellite texture rendering
+      Qt.callLater(function () {
+          textureGenerator.render();
+        });
     } catch (e) {
       console.log("3D ERROR:", e);
     }
@@ -158,6 +196,8 @@ Item {
       heightScale: 1.0  // Heights are already normalized in loadRealTerrain()
       baseColor: root.groundColor
       proceduralOnLoad: true
+      satelliteTexture: satelliteTexture
+      satelliteTextureReady: textureGenerator.ready  // Only use texture when it's actually rendered
     }
 
     // Origin marker for camera controller
@@ -214,6 +254,12 @@ Item {
         color: root.useRealTerrain ? "#4CAF50" : "#FFC107"
         font.pixelSize: 11
         text: "Terrain: " + (root.useRealTerrain ? "DEM (" + terrainProvider.terrainType + ")" : "Procedural")
+      }
+
+      Text {
+        color: root.hasSatelliteTexture ? "#4CAF50" : "#FFC107"
+        font.pixelSize: 11
+        text: "Texture: " + (root.hasSatelliteTexture ? "Satellite/Aerial" : "Procedural Grass")
       }
 
       Text {
@@ -293,7 +339,7 @@ Item {
       anchors.centerIn: parent
       color: "white"
       font.pixelSize: 13
-      text: root.useRealTerrain ? "🗺️ Phase 2: Real DEM Terrain" : "🏔️ Phase 1: Procedural Terrain Demo"
+      text: root.hasSatelliteTexture ? "🛰️ Phase 2.5: Satellite Imagery on DEM" : (root.useRealTerrain ? "🗺️ Phase 2: Real DEM Terrain" : "🏔️ Phase 1: Procedural Terrain Demo")
     }
   }
 }

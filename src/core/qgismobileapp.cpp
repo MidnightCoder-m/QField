@@ -119,6 +119,7 @@
 #include "qgsgeometrywrapper.h"
 #include "qgsproviderregistry.h"
 #include "qgsprovidersublayerdetails.h"
+#include "qgsquick3dmaptexturegenerator.h"
 #include "qgsquick3dterraingeometry.h"
 #include "qgsquick3dterrainprovider.h"
 #include "qgsquickcoordinatetransformer.h"
@@ -461,6 +462,7 @@ void QgisMobileapp::initDeclarative( QQmlEngine *engine )
   // Register 3D QML types
   qmlRegisterType<QgsQuick3DTerrainGeometry>( "org.qfield", 1, 0, "QgsQuick3DTerrainGeometry" );
   qmlRegisterType<QgsQuick3DTerrainProvider>( "org.qfield", 1, 0, "QgsQuick3DTerrainProvider" );
+  qmlRegisterType<QgsQuick3DMapTextureGenerator>( "org.qfield", 1, 0, "QgsQuick3DMapTextureGenerator" );
 
   // Register QField QML types
   qRegisterMetaType<PlatformUtilities::Capabilities>( "PlatformUtilities::Capabilities" );
@@ -647,6 +649,7 @@ void QgisMobileapp::registerGlobalVariables()
   addImageProvider( QLatin1String( "localfiles" ), mLocalFilesImageProvider );
   addImageProvider( QLatin1String( "projects" ), mProjectsImageProvider );
   addImageProvider( QLatin1String( "barcode" ), mBarcodeImageProvider );
+  addImageProvider( QLatin1String( "sketquick3d" ), new QgsQuick3DMapTextureImageProvider() );
 }
 
 

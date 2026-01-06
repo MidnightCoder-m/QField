@@ -6,6 +6,7 @@ set(QFIELD_CORE_SRCS
     platforms/platformutilities.cpp
     sketquick3d/qgsquick3dterraingeometry.cpp
     sketquick3d/qgsquick3dterrainprovider.cpp
+    sketquick3d/qgsquick3dmaptexturegenerator.cpp
     utils/coordinatereferencesystemutils.cpp
     utils/expressioncontextutils.cpp
     utils/featureutils.cpp
@@ -143,6 +144,8 @@ set(QFIELD_CORE_HDRS
     cogo/cogoregistry.h
     platforms/platformutilities.h
     sketquick3d/qgsquick3dterraingeometry.h
+    sketquick3d/qgsquick3dterrainprovider.h
+    sketquick3d/qgsquick3dmaptexturegenerator.h
     utils/coordinatereferencesystemutils.h
     utils/expressioncontextutils.h
     utils/featureutils.h

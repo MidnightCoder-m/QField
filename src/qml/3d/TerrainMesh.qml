@@ -7,6 +7,7 @@ import org.qfield 1.0
  *
  * Uses QgsQuick3DTerrainGeometry C++ class for efficient mesh generation.
  * Supports both procedural and DEM-based terrain.
+ * Can use satellite/aerial imagery texture when available.
  */
 Node {
   id: root
@@ -21,6 +22,20 @@ Node {
 
   // Generate procedural terrain on load
   property bool proceduralOnLoad: true
+
+  // External texture for satellite/aerial imagery
+  property var satelliteTexture: null
+  property bool satelliteTextureReady: false  // Set by parent when texture is actually ready
+  property bool useSatelliteTexture: satelliteTexture !== null && satelliteTextureReady
+
+  onSatelliteTextureReadyChanged: {
+    console.log("3D TerrainMesh: satelliteTextureReady changed to", satelliteTextureReady);
+    // Force material update when texture becomes ready
+    if (satelliteTextureReady && satelliteTexture) {
+      console.log("3D TerrainMesh: Forcing material update with satellite texture");
+      terrainMaterial.baseColorMap = satelliteTexture;
+    }
+  }
 
   // Procedural grass texture (generated at runtime)
   Texture {
@@ -93,13 +108,15 @@ Node {
       }
     }
 
-    materials: PrincipledMaterial {
-      id: terrainMaterial
-      baseColorMap: grassTexture
-      roughness: root.roughness
-      metalness: 0.0
-      normalStrength: 0.3
-    }
+    materials: [
+      PrincipledMaterial {
+        id: terrainMaterial
+        baseColorMap: root.useSatelliteTexture ? root.satelliteTexture : grassTexture
+        roughness: root.useSatelliteTexture ? 0.9 : root.roughness
+        metalness: 0.0
+        normalStrength: root.useSatelliteTexture ? 0.0 : 0.3
+      }
+    ]
   }
 
   // Update height data when changed

@@ -131,6 +131,22 @@ QRectF QgsQuick3DTerrainProvider::demExtent() const
     }
   }
 
+  // Make extent square (terrain mesh is square, texture should match)
+  double width = layerExtent.width();
+  double height = layerExtent.height();
+  if ( width > height )
+  {
+    double diff = ( width - height ) / 2.0;
+    layerExtent.setYMinimum( layerExtent.yMinimum() - diff );
+    layerExtent.setYMaximum( layerExtent.yMaximum() + diff );
+  }
+  else if ( height > width )
+  {
+    double diff = ( height - width ) / 2.0;
+    layerExtent.setXMinimum( layerExtent.xMinimum() - diff );
+    layerExtent.setXMaximum( layerExtent.xMaximum() + diff );
+  }
+
   return QRectF( layerExtent.xMinimum(), layerExtent.yMinimum(),
                  layerExtent.width(), layerExtent.height() );
 }
