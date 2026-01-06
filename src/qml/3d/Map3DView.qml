@@ -254,7 +254,7 @@ Item {
     distance: 2200  // Good starting distance for terrainSize=2000
     pitch: 40       // 40 degrees above horizon (positive = camera above target)
     yaw: 0
-    minDistance: 100
+    minDistance: 500   // Don't allow zooming into terrain (keep distance)
     maxDistance: 10000
   }
 
