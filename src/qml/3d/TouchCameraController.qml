@@ -9,6 +9,10 @@ import QtQuick3D
  * - Two finger drag: Pan camera
  * - Pinch: Zoom in/out
  * - Double tap: Reset view
+ *
+ * Features:
+ * - Inertia/momentum for smooth feel
+ * - Pitch limits to prevent going underground
  */
 Item {
   id: root
@@ -22,18 +26,22 @@ Item {
   // Camera constraints
   property real minDistance: 100
   property real maxDistance: 2000
-  property real minPitch: -89  // degrees
-  property real maxPitch: 89   // degrees
+  property real minPitch: 5     // Minimum 5° above horizon (can't go underground!)
+  property real maxPitch: 89    // Maximum 89° (almost top-down)
 
   // Sensitivity
   property real orbitSensitivity: 0.3
   property real panSensitivity: 1.0
   property real zoomSensitivity: 0.005
 
+  // Inertia settings
+  property real inertiaDecay: 0.95      // How fast inertia slows down (0.9-0.98), higher = longer
+  property real minInertiaVelocity: 0.05 // Stop inertia below this velocity
+
   // Current camera state (spherical coordinates)
   property real distance: 800
   property real yaw: 0      // horizontal angle (degrees)
-  property real pitch: -30  // vertical angle (degrees)
+  property real pitch: 40   // vertical angle (degrees) - positive = above target
 
   // Animation
   property bool animating: false
@@ -46,34 +54,116 @@ Item {
     property real lastPinchDistance: 0
     property bool isPanning: false
     property int touchCount: 0
+
+    // Inertia velocities
+    property real velocityYaw: 0
+    property real velocityPitch: 0
+    property real velocityZoom: 0
+    property bool inertiaActive: false
+
+    // For velocity calculation
+    property real lastDx: 0
+    property real lastDy: 0
+    property real lastTime: 0
   }
 
   Component.onCompleted: {
     updateCameraPosition();
   }
 
+  // Inertia animation timer
+  Timer {
+    id: inertiaTimer
+    interval: 16  // ~60fps
+    repeat: true
+    running: internal.inertiaActive
+
+    onTriggered: {
+      // Apply inertia velocities
+      if (Math.abs(internal.velocityYaw) > root.minInertiaVelocity || Math.abs(internal.velocityPitch) > root.minInertiaVelocity) {
+        root.yaw += internal.velocityYaw;
+        root.pitch = Math.max(root.minPitch, Math.min(root.maxPitch, root.pitch + internal.velocityPitch));
+
+        // Decay velocities
+        internal.velocityYaw *= root.inertiaDecay;
+        internal.velocityPitch *= root.inertiaDecay;
+        updateCameraPosition();
+      } else {
+        // Stop inertia when velocity is too low
+        internal.inertiaActive = false;
+        internal.velocityYaw = 0;
+        internal.velocityPitch = 0;
+      }
+    }
+  }
+
   // Update camera position from spherical coordinates
+  // pitch: positive = looking down from above, negative = looking up from below
   function updateCameraPosition() {
     if (!camera) {
       return;
     }
-    var pitchRad = pitch * Math.PI / 180;
+    // pitch of 45 means camera is 45 degrees above horizon looking down
+    var elevationRad = pitch * Math.PI / 180;
     var yawRad = yaw * Math.PI / 180;
-    var x = target.x + distance * Math.cos(pitchRad) * Math.sin(yawRad);
-    var y = target.y + distance * Math.sin(pitchRad);
-    var z = target.z + distance * Math.cos(pitchRad) * Math.cos(yawRad);
+    var horizontalDist = distance * Math.cos(elevationRad);
+    var x = target.x + horizontalDist * Math.sin(yawRad);
+    var y = target.y + distance * Math.sin(elevationRad);  // Positive pitch = above target
+    var z = target.z + horizontalDist * Math.cos(yawRad);
     camera.position = Qt.vector3d(x, y, z);
     camera.lookAt(target);
   }
 
-  // Reset view to default
+  // Reset view to default (with smooth animation)
   function resetView() {
-    yaw = 0;
-    pitch = -30;
-    distance = 800;
-    target = Qt.vector3d(0, 0, 0);
-    updateCameraPosition();
+    // Stop inertia
+    internal.inertiaActive = false;
+    internal.velocityYaw = 0;
+    internal.velocityPitch = 0;
+
+    // Animate to default position
+    resetAnimation.start();
   }
+
+  // Smooth reset animation
+  ParallelAnimation {
+    id: resetAnimation
+
+    NumberAnimation {
+      target: root
+      property: "yaw"
+      to: 0
+      duration: 300
+      easing.type: Easing.OutCubic
+    }
+    NumberAnimation {
+      target: root
+      property: "pitch"
+      to: 40
+      duration: 300
+      easing.type: Easing.OutCubic
+    }
+    NumberAnimation {
+      target: root
+      property: "distance"
+      to: 2200
+      duration: 300
+      easing.type: Easing.OutCubic
+    }
+
+    onFinished: {
+      target = Qt.vector3d(0, 100, 0);
+      updateCameraPosition();
+    }
+  }
+
+  // Update camera when animated properties change
+  onYawChanged: if (resetAnimation.running)
+    updateCameraPosition()
+  onPitchChanged: if (resetAnimation.running)
+    updateCameraPosition()
+  onDistanceChanged: if (resetAnimation.running)
+    updateCameraPosition()
 
   // Zoom to fit
   function zoomToFit(center, radius) {
@@ -82,13 +172,13 @@ Item {
     updateCameraPosition();
   }
 
-  // Multi-touch handler
+  // Multi-touch handler (for touch screens only, mouse handled by DragHandler)
   MultiPointTouchArea {
     id: touchArea
     anchors.fill: parent
     minimumTouchPoints: 1
     maximumTouchPoints: 2
-    mouseEnabled: true
+    mouseEnabled: false  // Mouse handled by DragHandler for better inertia
 
     touchPoints: [
       TouchPoint {
@@ -100,9 +190,14 @@ Item {
     ]
 
     onPressed: function (touchPoints) {
+      // Stop any ongoing inertia
+      internal.inertiaActive = false;
+      internal.velocityYaw = 0;
+      internal.velocityPitch = 0;
       internal.touchCount = touchPoints.length;
       if (touchPoints.length >= 1) {
         internal.lastPos = Qt.point(touchPoints[0].x, touchPoints[0].y);
+        internal.lastTime = Date.now();
       }
       if (touchPoints.length >= 2) {
         internal.lastPos2 = Qt.point(touchPoints[1].x, touchPoints[1].y);
@@ -118,9 +213,20 @@ Item {
         // Single finger: orbit
         var dx = touchPoints[0].x - internal.lastPos.x;
         var dy = touchPoints[0].y - internal.lastPos.y;
-        root.yaw += dx * root.orbitSensitivity;
-        root.pitch = Math.max(root.minPitch, Math.min(root.maxPitch, root.pitch - dy * root.orbitSensitivity));
+
+        // Calculate time delta for velocity
+        var now = Date.now();
+        var dt = Math.max(16, now - internal.lastTime);  // Min 16ms to avoid spikes
+
+        // Store velocity for inertia (inverted for natural feel)
+        internal.velocityYaw = (-dx * root.orbitSensitivity) * (16 / dt);
+        internal.velocityPitch = (dy * root.orbitSensitivity) * (16 / dt);  // Inverted: drag up = look up
+
+        // Apply rotation (inverted for natural drag direction)
+        root.yaw -= dx * root.orbitSensitivity;
+        root.pitch = Math.max(root.minPitch, Math.min(root.maxPitch, root.pitch + dy * root.orbitSensitivity));
         internal.lastPos = Qt.point(touchPoints[0].x, touchPoints[0].y);
+        internal.lastTime = now;
         updateCameraPosition();
       } else if (touchPoints.length === 2) {
         // Two fingers: pan + pinch zoom
@@ -156,12 +262,18 @@ Item {
 
     onReleased: function (touchPoints) {
       if (touchPoints.length === 0) {
+        // Start inertia when releasing single finger orbit
+        var hasVelocity = Math.abs(internal.velocityYaw) > root.minInertiaVelocity || Math.abs(internal.velocityPitch) > root.minInertiaVelocity;
+        if (!internal.isPanning && hasVelocity) {
+          internal.inertiaActive = true;
+        }
         internal.isPanning = false;
         internal.touchCount = 0;
       } else {
         internal.touchCount = touchPoints.length;
         if (touchPoints.length === 1) {
           internal.lastPos = Qt.point(touchPoints[0].x, touchPoints[0].y);
+          internal.lastTime = Date.now();
           internal.isPanning = false;
         }
       }
@@ -182,6 +294,53 @@ Item {
 
     onDoubleTapped: {
       resetView();
+    }
+  }
+
+  // Mouse drag handler for desktop (better inertia support)
+  DragHandler {
+    id: mouseDragHandler
+    acceptedButtons: Qt.LeftButton
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+    property point lastPoint: Qt.point(0, 0)
+    property real lastTime: 0
+
+    onActiveChanged: {
+      if (active) {
+        // Drag started
+        internal.inertiaActive = false;
+        internal.velocityYaw = 0;
+        internal.velocityPitch = 0;
+        lastPoint = centroid.position;
+        lastTime = Date.now();
+      } else {
+        // Drag ended - start inertia
+        var hasVelocity = Math.abs(internal.velocityYaw) > root.minInertiaVelocity || Math.abs(internal.velocityPitch) > root.minInertiaVelocity;
+        if (hasVelocity) {
+          internal.inertiaActive = true;
+        }
+      }
+    }
+
+    onCentroidChanged: {
+      if (!active)
+        return;
+      var dx = centroid.position.x - lastPoint.x;
+      var dy = centroid.position.y - lastPoint.y;
+      var now = Date.now();
+      var dt = Math.max(16, now - lastTime);
+
+      // Store velocity for inertia (both inverted for natural drag feel)
+      internal.velocityYaw = (-dx * root.orbitSensitivity) * (16 / dt);
+      internal.velocityPitch = (dy * root.orbitSensitivity) * (16 / dt);  // Inverted: drag up = look up
+
+      // Apply rotation (inverted for natural feel)
+      root.yaw -= dx * root.orbitSensitivity;
+      root.pitch = Math.max(root.minPitch, Math.min(root.maxPitch, root.pitch + dy * root.orbitSensitivity));
+      lastPoint = centroid.position;
+      lastTime = now;
+      updateCameraPosition();
     }
   }
 

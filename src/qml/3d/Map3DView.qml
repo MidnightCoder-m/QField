@@ -139,6 +139,18 @@ Item {
       internal.minHeight = minH;
       internal.maxHeight = maxH;
 
+      // Log terrain info for camera positioning
+      console.log("=== TERRAIN LOADED ===");
+      console.log("  terrainSize:", root.terrainSize);
+      console.log("  heightRange (original):", heightRange.toFixed(1), "m (", minH.toFixed(1), "-", maxH.toFixed(1), ")");
+      console.log("  targetMaxHeight (scaled):", (root.terrainSize * 0.3).toFixed(1));
+      console.log("  terrain bounds: X=[", (-root.terrainSize / 2).toFixed(0), ",", (root.terrainSize / 2).toFixed(0), "]");
+      console.log("                  Z=[", (-root.terrainSize / 2).toFixed(0), ",", (root.terrainSize / 2).toFixed(0), "]");
+      console.log("                  Y=[0,", (root.terrainSize * 0.3).toFixed(0), "]");
+
+      // Auto-position camera to view terrain from above
+      positionCameraForTerrain();
+
       // Trigger satellite texture rendering
       Qt.callLater(function () {
           textureGenerator.render();
@@ -146,6 +158,32 @@ Item {
     } catch (e) {
       console.log("3D ERROR:", e);
     }
+  }
+
+  // Auto-position camera to get a good view of the terrain
+  function positionCameraForTerrain() {
+    // Calculate good viewing distance based on terrain size
+    var terrainDiagonal = Math.sqrt(2) * root.terrainSize;  // Diagonal of terrain
+    var targetHeight = root.terrainSize * 0.3;  // Max terrain height
+
+    // Camera should be far enough to see the whole terrain
+    // Distance = terrain diagonal * 0.8 gives a good overview
+    var viewDistance = terrainDiagonal * 0.8;
+
+    // Position camera above and behind terrain center
+    // Looking down at ~45 degree angle
+    var cameraHeight = viewDistance * 0.6;  // 60% of distance as height
+    var cameraZ = viewDistance * 0.7;       // 70% of distance behind
+
+    // Update camera controller parameters
+    cameraController.distance = viewDistance;
+    cameraController.pitch = 40;  // 40 degrees above horizon (positive = above target)
+    cameraController.yaw = 0;
+    cameraController.target = Qt.vector3d(0, targetHeight * 0.3, 0);  // Look at terrain center, slightly above base
+    console.log("=== CAMERA POSITIONED ===");
+    console.log("  viewDistance:", viewDistance.toFixed(0));
+    console.log("  target:", cameraController.target);
+    console.log("  pitch:", cameraController.pitch);
   }
 
   View3D {
@@ -163,8 +201,8 @@ Item {
     // Main camera
     PerspectiveCamera {
       id: camera
-      position: Qt.vector3d(0, 1000, 1600)
-      eulerRotation: Qt.vector3d(-35, 0, 0)
+      position: Qt.vector3d(0, 1500, 2000)  // Will be overridden by controller
+      eulerRotation: Qt.vector3d(-40, 0, 0)
       clipNear: 1
       clipFar: 50000
       fieldOfView: 60
@@ -212,12 +250,12 @@ Item {
     id: cameraController
     anchors.fill: parent
     camera: camera
-    target: Qt.vector3d(0, 50, 0)
-    distance: 800
-    pitch: -30
+    target: Qt.vector3d(0, 100, 0)
+    distance: 2200  // Good starting distance for terrainSize=2000
+    pitch: 40       // 40 degrees above horizon (positive = camera above target)
     yaw: 0
-    minDistance: 50
-    maxDistance: 3000
+    minDistance: 100
+    maxDistance: 10000
   }
 
   // Debug overlay
