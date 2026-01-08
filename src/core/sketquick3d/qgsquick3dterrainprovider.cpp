@@ -238,12 +238,6 @@ QVariantList QgsQuick3DTerrainProvider::sampleHeightGrid() const
     }
   }
 
-  // Only log summary once
-  if ( validCount > 0 )
-  {
-    qDebug() << "3D TERRAIN: Sampled" << validCount << "valid heights, range:" << minH << "-" << maxH;
-  }
-
   return heights;
 }
 
@@ -357,8 +351,6 @@ void QgsQuick3DTerrainProvider::updateTerrainProvider()
         // Store the DEM layer for direct sampling with CRS transform
         mDemLayer = demLayer;
 
-        qDebug() << "3D TERRAIN: DEM Layer:" << demLayer->name() << "CRS:" << demLayer->crs().authid();
-
         // Check data provider - if WMS, find a local DEM
         if ( demLayer->dataProvider() && demLayer->dataProvider()->name() == QStringLiteral( "wms" ) )
         {
@@ -445,8 +437,6 @@ QgsRasterLayer *QgsQuick3DTerrainProvider::findLocalDemLayer() const
 
 double QgsQuick3DTerrainProvider::sampleHeightFromRaster( QgsRasterLayer *layer, double x, double y ) const
 {
-  static bool crsLogged = false;
-
   if ( !layer || !layer->dataProvider() )
     return 0.0;
 
@@ -458,12 +448,6 @@ double QgsQuick3DTerrainProvider::sampleHeightFromRaster( QgsRasterLayer *layer,
   // Check if we need coordinate transformation
   if ( mProject && layer->crs() != mProject->crs() )
   {
-    if ( !crsLogged )
-    {
-      qDebug() << "3D TERRAIN: CRS transform:" << mProject->crs().authid() << "->" << layer->crs().authid();
-      crsLogged = true;
-    }
-
     QgsCoordinateTransform transform( mProject->crs(), layer->crs(), mProject->transformContext() );
     try
     {

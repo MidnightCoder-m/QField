@@ -29,10 +29,7 @@ Node {
   property bool useSatelliteTexture: satelliteTexture !== null && satelliteTextureReady
 
   onSatelliteTextureReadyChanged: {
-    console.log("3D TerrainMesh: satelliteTextureReady changed to", satelliteTextureReady);
-    // Force material update when texture becomes ready
     if (satelliteTextureReady && satelliteTexture) {
-      console.log("3D TerrainMesh: Forcing material update with satellite texture");
       terrainMaterial.baseColorMap = satelliteTexture;
     }
   }

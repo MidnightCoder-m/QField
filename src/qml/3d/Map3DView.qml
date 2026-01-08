@@ -19,7 +19,6 @@ Item {
   }
 
   // Public properties
-  property bool debugMode: true
   property color skyColor: "#87CEEB"
   property color groundColor: "#4a7c4e"
   property real terrainSize: 2000
@@ -39,18 +38,12 @@ Item {
   QgsQuick3DMapTextureGenerator {
     id: textureGenerator
     project: root.qgisProject
-    textureSize: 2048  // High quality texture
+    textureSize: 2048
 
     onReadyChanged: {
       if (ready) {
-        console.log("3D: Satellite texture ready! Loading from file:", textureFilePath);
-        // Load texture from file instead of image provider (more reliable for 3D)
         satelliteTexture.source = "file://" + textureFilePath;
       }
-    }
-
-    onRenderError: function (error) {
-      console.log("3D: Texture render error:", error);
     }
   }
 
@@ -58,10 +51,6 @@ Item {
   Texture {
     id: satelliteTexture
     source: ""
-
-    onSourceChanged: {
-      console.log("3D: Texture source changed to:", source);
-    }
   }
 
   // Terrain data provider (reads from QGIS project)
@@ -119,29 +108,20 @@ Item {
       internal.minHeight = minH;
       internal.maxHeight = maxH;
 
-      // Log terrain info for camera positioning
-      console.log("=== TERRAIN LOADED ===");
-      console.log("  terrainSize:", root.terrainSize);
-      console.log("  heightRange (original):", heightRange.toFixed(1), "m (", minH.toFixed(1), "-", maxH.toFixed(1), ")");
-      console.log("  targetMaxHeight (scaled):", (root.terrainSize * 0.3).toFixed(1));
-      console.log("  terrain bounds: X=[", (-root.terrainSize / 2).toFixed(0), ",", (root.terrainSize / 2).toFixed(0), "]");
-      console.log("                  Z=[", (-root.terrainSize / 2).toFixed(0), ",", (root.terrainSize / 2).toFixed(0), "]");
-      console.log("                  Y=[0,", (root.terrainSize * 0.3).toFixed(0), "]");
-
       // Auto-position camera to view terrain from above
       positionCameraForTerrain();
 
       // Trigger satellite texture rendering with DEM extent
       var demExt = terrainProvider.demExtent;
-      console.log("3D: DEM extent for texture:", demExt);
       if (demExt && demExt.width > 0 && demExt.height > 0) {
         textureGenerator.extent = demExt;
         Qt.callLater(function () {
             textureGenerator.render();
           });
       }
-    } catch (e) {
-      console.log("3D ERROR:", e);
+    } catch (e)
+    // Error loading terrain
+    {
     }
   }
 
@@ -162,13 +142,9 @@ Item {
 
     // Update camera controller parameters
     cameraController.distance = viewDistance;
-    cameraController.pitch = 40;  // 40 degrees above horizon (positive = above target)
+    cameraController.pitch = 40;
     cameraController.yaw = 0;
-    cameraController.target = Qt.vector3d(0, targetHeight * 0.3, 0);  // Look at terrain center, slightly above base
-    console.log("=== CAMERA POSITIONED ===");
-    console.log("  viewDistance:", viewDistance.toFixed(0));
-    console.log("  target:", cameraController.target);
-    console.log("  pitch:", cameraController.pitch);
+    cameraController.target = Qt.vector3d(0, targetHeight * 0.3, 0);
   }
 
   View3D {
@@ -243,64 +219,7 @@ Item {
     maxDistance: 10000
   }
 
-  // Debug overlay
-  Rectangle {
-    visible: root.debugMode
-    anchors.top: parent.top
-    anchors.left: parent.left
-    anchors.margins: 10
-    width: debugColumn.width + 20
-    height: debugColumn.height + 20
-    color: "#CC000000"
-    radius: 8
-
-    Column {
-      id: debugColumn
-      anchors.centerIn: parent
-      spacing: 4
-
-      Text {
-        color: "#4CAF50"
-        font.pixelSize: 16
-        font.bold: true
-        text: "🗺️ QField 3D Viewer"
-      }
-
-      Text {
-        color: "white"
-        font.pixelSize: 11
-        font.family: "monospace"
-        text: "Camera: (" + camera.position.x.toFixed(0) + ", " + camera.position.y.toFixed(0) + ", " + camera.position.z.toFixed(0) + ")"
-      }
-
-      Text {
-        color: root.useRealTerrain ? "#4CAF50" : "#FFC107"
-        font.pixelSize: 11
-        text: "Terrain: " + (root.useRealTerrain ? "DEM (" + terrainProvider.terrainType + ")" : "Procedural")
-      }
-
-      Text {
-        color: root.hasSatelliteTexture ? "#4CAF50" : "#FFC107"
-        font.pixelSize: 11
-        text: "Texture: " + (root.hasSatelliteTexture ? "Satellite/Aerial" : "Procedural Grass")
-      }
-
-      Text {
-        visible: root.useRealTerrain
-        color: "#aaa"
-        font.pixelSize: 10
-        text: "Heights: " + internal.minHeight.toFixed(0) + " - " + internal.maxHeight.toFixed(0) + " m"
-      }
-
-      Text {
-        color: "#aaa"
-        font.pixelSize: 10
-        text: "1 finger: orbit | 2 fingers: pan+zoom | Double tap: reset"
-      }
-    }
-  }
-
-  // Internal state to cache terrain stats (avoid calling every frame)
+  // Internal state to cache terrain stats
   QtObject {
     id: internal
     property real minHeight: 0
@@ -336,13 +255,9 @@ Item {
 
     MouseArea {
       anchors.fill: parent
-      z: 1000  // Ensure it's on top
+      z: 1000
       onClicked: {
-        console.log("3D: Close button clicked!");
         mainWindow.show3DView = false;
-      }
-      onPressed: {
-        console.log("3D: Close button pressed");
       }
     }
   }

@@ -134,8 +134,6 @@ void QgsQuick3DMapTextureGenerator::render()
                              mExtent.left() + mExtent.width(),
                              mExtent.top() + mExtent.height() );
 
-  qDebug() << "3D Texture: Using map extent:" << renderExtent.toString();
-
   // Make the extent square (terrain mesh is square, so texture should match)
   // Expand the smaller dimension to match the larger one
   double width = renderExtent.width();
@@ -161,12 +159,7 @@ void QgsQuick3DMapTextureGenerator::render()
   mapSettings.setExtent( renderExtent );
   mapSettings.setDestinationCrs( mProject->crs() );
   mapSettings.setTransformContext( mProject->transformContext() );
-  mapSettings.setBackgroundColor( QColor( 80, 80, 80 ) ); // Dark gray background for no-data areas
-
-  qDebug() << "3D Texture: Render extent (squared):" << renderExtent.toString();
-  qDebug() << "3D Texture: Render extent size:" << renderExtent.width() << "x" << renderExtent.height();
-  qDebug() << "3D Texture: Output size:" << mTextureSize << "x" << mTextureSize;
-  qDebug() << "3D Texture: Project CRS:" << mProject->crs().authid();
+  mapSettings.setBackgroundColor( QColor( 80, 80, 80 ) );
 
   // Collect layers to render (raster layers only for now, excluding DEM)
   QList<QgsMapLayer *> layersToRender;
@@ -183,18 +176,10 @@ void QgsQuick3DMapTextureGenerator::render()
       QgsRasterLayer *rasterLayer = qobject_cast<QgsRasterLayer *>( layer );
       if ( rasterLayer )
       {
-        qDebug() << "3D Texture: Layer" << rasterLayer->name()
-                 << "CRS:" << rasterLayer->crs().authid()
-                 << "extent:" << rasterLayer->extent().toString();
-        qDebug() << "3D Texture: Found raster layer:" << rasterLayer->name()
-                 << "bands:" << rasterLayer->bandCount()
-                 << "provider:" << ( rasterLayer->dataProvider() ? rasterLayer->dataProvider()->name() : "null" );
-
         // Skip single-band DEMs (likely elevation data)
         // Include multi-band rasters (likely imagery)
         if ( rasterLayer->bandCount() > 1 )
         {
-          qDebug() << "3D Texture: Adding multi-band layer:" << rasterLayer->name();
           layersToRender.append( layer );
         }
         else
@@ -202,12 +187,7 @@ void QgsQuick3DMapTextureGenerator::render()
           // Check if it's a WMS layer (likely imagery)
           if ( rasterLayer->dataProvider() && ( rasterLayer->dataProvider()->name() == QStringLiteral( "wms" ) || rasterLayer->dataProvider()->name() == QStringLiteral( "wmts" ) ) )
           {
-            qDebug() << "3D Texture: Adding WMS layer:" << rasterLayer->name();
             layersToRender.append( layer );
-          }
-          else
-          {
-            qDebug() << "3D Texture: Skipping single-band layer:" << rasterLayer->name();
           }
         }
       }
@@ -216,20 +196,13 @@ void QgsQuick3DMapTextureGenerator::render()
 
   if ( layersToRender.isEmpty() )
   {
-    qDebug() << "3D Texture: No suitable layers to render";
     // Create a simple colored texture instead
     mRenderedImage = QImage( mTextureSize, mTextureSize, QImage::Format_RGB32 );
-    mRenderedImage.fill( QColor( 100, 140, 100 ) ); // Green-ish ground color
+    mRenderedImage.fill( QColor( 100, 140, 100 ) );
     mReady = true;
     emit readyChanged();
     emit textureReady();
     return;
-  }
-
-  qDebug() << "3D Texture: Rendering" << layersToRender.size() << "layers to" << mTextureSize << "x" << mTextureSize << "texture";
-  for ( auto *layer : layersToRender )
-  {
-    qDebug() << "3D Texture: Will render:" << layer->name();
   }
 
   mapSettings.setLayers( layersToRender );
@@ -251,36 +224,13 @@ void QgsQuick3DMapTextureGenerator::onRenderFinished()
 
   if ( mRenderedImage.isNull() )
   {
-    qDebug() << "3D Texture: Render failed, creating fallback texture";
     mRenderedImage = QImage( mTextureSize, mTextureSize, QImage::Format_RGB32 );
     mRenderedImage.fill( QColor( 100, 140, 100 ) );
   }
-  else
-  {
-    qDebug() << "3D Texture: Render complete," << mRenderedImage.width() << "x" << mRenderedImage.height()
-             << "format:" << mRenderedImage.format();
-
-    // Debug: Check some pixel colors
-    if ( mRenderedImage.width() > 0 && mRenderedImage.height() > 0 )
-    {
-      QColor center = mRenderedImage.pixelColor( mRenderedImage.width() / 2, mRenderedImage.height() / 2 );
-      QColor corner = mRenderedImage.pixelColor( 0, 0 );
-      qDebug() << "3D Texture: Center pixel:" << center.red() << center.green() << center.blue();
-      qDebug() << "3D Texture: Corner pixel:" << corner.red() << corner.green() << corner.blue();
-    }
-  }
 
   // Save texture to a temp file for QtQuick3D to load directly
-  // This is more reliable than using QQuickImageProvider for 3D textures
   mTextureFilePath = QStringLiteral( "/tmp/qfield_3d_texture_%1.png" ).arg( mTextureId );
-  if ( mRenderedImage.save( mTextureFilePath ) )
-  {
-    qDebug() << "3D Texture: Saved to" << mTextureFilePath;
-  }
-  else
-  {
-    qDebug() << "3D Texture: Failed to save to" << mTextureFilePath;
-  }
+  mRenderedImage.save( mTextureFilePath );
 
   mReady = true;
   emit readyChanged();
