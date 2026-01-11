@@ -209,7 +209,9 @@ QVariantList QgsQuick3DTerrainProvider::sampleHeightGrid() const
 
   for ( int row = 0; row < mResolution; ++row )
   {
-    const double y = mExtent.top() + row * yStep;
+    // Flip vertically: read from bottom to top to match 3D coordinate system
+    const int flippedRow = mResolution - 1 - row;
+    const double y = mExtent.top() + flippedRow * yStep;
     for ( int col = 0; col < mResolution; ++col )
     {
       const double x = mExtent.left() + col * xStep;

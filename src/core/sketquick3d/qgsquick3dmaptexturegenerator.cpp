@@ -291,6 +291,10 @@ void QgsQuick3DMapTextureGenerator::onRenderFinished()
       qDebug() << "3D Texture: Center pixel:" << center.red() << center.green() << center.blue();
       qDebug() << "3D Texture: Corner pixel:" << corner.red() << corner.green() << corner.blue();
     }
+
+    // Flip vertically to match terrain geometry orientation
+    mRenderedImage = mRenderedImage.mirrored( false, true );
+    qDebug() << "3D Texture: Flipped vertically to match terrain";
   }
 
   // Save texture to a temp file for QtQuick3D to load directly
