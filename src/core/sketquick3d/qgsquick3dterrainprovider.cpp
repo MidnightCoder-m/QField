@@ -116,6 +116,7 @@ QRectF QgsQuick3DTerrainProvider::demExtent() const
     return QRectF();
 
   QgsRectangle layerExtent = layer->extent();
+  qDebug() << "3D TERRAIN: DEM native extent:" << layerExtent.toString() << "CRS:" << layer->crs().authid();
 
   // Transform to project CRS if needed
   if ( mProject && layer->crs() != mProject->crs() )
@@ -124,6 +125,7 @@ QRectF QgsQuick3DTerrainProvider::demExtent() const
     try
     {
       layerExtent = transform.transformBoundingBox( layerExtent );
+      qDebug() << "3D TERRAIN: DEM transformed extent:" << layerExtent.toString() << "CRS:" << mProject->crs().authid();
     }
     catch ( ... )
     {
@@ -131,24 +133,26 @@ QRectF QgsQuick3DTerrainProvider::demExtent() const
     }
   }
 
-  // Make extent square (terrain mesh is square, texture should match)
-  double width = layerExtent.width();
-  double height = layerExtent.height();
-  if ( width > height )
-  {
-    double diff = ( width - height ) / 2.0;
-    layerExtent.setYMinimum( layerExtent.yMinimum() - diff );
-    layerExtent.setYMaximum( layerExtent.yMaximum() + diff );
-  }
-  else if ( height > width )
-  {
-    double diff = ( height - width ) / 2.0;
-    layerExtent.setXMinimum( layerExtent.xMinimum() - diff );
-    layerExtent.setXMaximum( layerExtent.xMaximum() + diff );
-  }
+  qDebug() << "3D TERRAIN: Extent width:" << layerExtent.width() << "height:" << layerExtent.height();
 
+  // Return actual extent without making it square
+  // The terrain mesh will be scaled to match the aspect ratio
   return QRectF( layerExtent.xMinimum(), layerExtent.yMinimum(),
                  layerExtent.width(), layerExtent.height() );
+}
+
+double QgsQuick3DTerrainProvider::demExtentWidth() const
+{
+  QRectF ext = demExtent();
+  // Return absolute width to avoid QRectF normalization issues
+  return qAbs( ext.width() );
+}
+
+double QgsQuick3DTerrainProvider::demExtentHeight() const
+{
+  QRectF ext = demExtent();
+  // Return absolute height to avoid QRectF normalization issues
+  return qAbs( ext.height() );
 }
 
 double QgsQuick3DTerrainProvider::heightAt( double x, double y ) const

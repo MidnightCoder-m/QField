@@ -57,6 +57,12 @@ class QgsQuick3DTerrainProvider : public QObject
     //! Extent of the DEM layer (read-only, in project CRS)
     Q_PROPERTY( QRectF demExtent READ demExtent NOTIFY demExtentChanged )
 
+    //! Width of the DEM extent in project CRS units
+    Q_PROPERTY( double demExtentWidth READ demExtentWidth NOTIFY demExtentChanged )
+
+    //! Height of the DEM extent in project CRS units
+    Q_PROPERTY( double demExtentHeight READ demExtentHeight NOTIFY demExtentChanged )
+
   public:
     explicit QgsQuick3DTerrainProvider( QObject *parent = nullptr );
     ~QgsQuick3DTerrainProvider() override;
@@ -77,6 +83,8 @@ class QgsQuick3DTerrainProvider : public QObject
     void setExtent( const QRectF &extent );
 
     QRectF demExtent() const;
+    double demExtentWidth() const;
+    double demExtentHeight() const;
 
     /**
      * @brief Get elevation at a specific point

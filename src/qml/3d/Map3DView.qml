@@ -24,7 +24,7 @@ Item {
   property color groundColor: "#4a7c4e"
   property real terrainSize: 2000
   property real terrainHeight: 100
-  property real verticalExaggeration: 0.1  // Reduced for real DEM data
+  property real verticalExaggeration: 0.3  // Reduced for real DEM data
 
   // QGIS project for real terrain data
   property var qgisProject: null
@@ -118,35 +118,78 @@ Item {
       }
       var heightRange = maxH - minH;
 
-      // Normalize heights for display (scale to fit in view)
-      // Keep terrainSize at 2000 for consistent camera behavior
-      // Scale heights proportionally
+      // Calculate real-world aspect ratio
+      // Get extent size in meters directly from provider (avoids QRectF issues)
+      var extentWidth = terrainProvider.demExtentWidth;   // in CRS units (meters for 3857)
+      var extentHeight = terrainProvider.demExtentHeight; // in CRS units
+      var extentSize = Math.max(extentWidth, extentHeight);
+
+      // Calculate scale factors to maintain proper aspect ratio
+      // The mesh is always square (terrainSize x terrainSize)
+      // We scale it to match the actual extent proportions
+      // X axis = east-west (width), Z axis = north-south (height)
+      if (extentWidth >= extentHeight) {
+        internal.scaleX = 1.0;
+        internal.scaleZ = extentHeight / extentWidth;
+      } else {
+        internal.scaleX = extentWidth / extentHeight;
+        internal.scaleZ = 1.0;
+      }
+      console.log("  extent: width=", extentWidth.toFixed(0), "height=", extentHeight.toFixed(0));
+      console.log("  aspect ratio scale: X=", internal.scaleX.toFixed(3), "Z=", internal.scaleZ.toFixed(3));
+
+      // Calculate proper height scale to maintain real proportions
+      // terrainSize represents extentSize in 3D units
+      // so heightRange should scale proportionally
+      var realHeightScale = root.terrainSize / extentSize;  // 3D units per meter
+
+      // For large areas (> 10km), real scale makes terrain look flat
+      // Apply visual exaggeration based on extent size
+      // Smaller areas need less exaggeration, larger areas need more
+      var visualExaggeration = 1.0;
+      if (extentSize > 100000) {
+        // Very large area (> 100km): strong exaggeration
+        visualExaggeration = 15.0;
+      } else if (extentSize > 50000) {
+        // Large area (50-100km): moderate-high exaggeration
+        visualExaggeration = 10.0;
+      } else if (extentSize > 10000) {
+        // Medium area (10-50km): moderate exaggeration
+        visualExaggeration = 5.0;
+      } else {
+        // Small area (< 10km): slight exaggeration
+        visualExaggeration = 2.0;
+      }
       if (heightRange > 0) {
         var normalizedHeights = [];
-        // Target height should be visible but not overwhelming
-        // Use 30% of terrainSize as max height
-        var targetMaxHeight = root.terrainSize * 0.3;
-        var scale = targetMaxHeight / heightRange;
         for (var j = 0; j < heights.length; j++) {
-          normalizedHeights.push((heights[j] - minH) * scale);
+          // Scale height to 3D units, then apply visual exaggeration
+          normalizedHeights.push((heights[j] - minH) * realHeightScale * visualExaggeration);
         }
         heights = normalizedHeights;
       }
+
+      // Calculate actual max height in 3D units for camera positioning
+      var maxHeight3D = heightRange * realHeightScale * visualExaggeration;
       terrainMesh.heightData = heights;
       terrainMesh.proceduralOnLoad = false;
 
       // Update internal cache for display
       internal.minHeight = minH;
       internal.maxHeight = maxH;
+      internal.maxHeight3D = maxHeight3D;
 
       // Log terrain info for camera positioning
       console.log("=== TERRAIN LOADED ===");
       console.log("  terrainSize:", root.terrainSize);
-      console.log("  heightRange (original):", heightRange.toFixed(1), "m (", minH.toFixed(1), "-", maxH.toFixed(1), ")");
-      console.log("  targetMaxHeight (scaled):", (root.terrainSize * 0.3).toFixed(1));
+      console.log("  extent size:", extentSize.toFixed(0), "meters");
+      console.log("  heightRange (real):", heightRange.toFixed(1), "m (", minH.toFixed(1), "-", maxH.toFixed(1), ")");
+      console.log("  realHeightScale:", realHeightScale.toFixed(6), "(3D units per meter)");
+      console.log("  visualExaggeration:", visualExaggeration);
+      console.log("  maxHeight3D:", maxHeight3D.toFixed(1));
       console.log("  terrain bounds: X=[", (-root.terrainSize / 2).toFixed(0), ",", (root.terrainSize / 2).toFixed(0), "]");
       console.log("                  Z=[", (-root.terrainSize / 2).toFixed(0), ",", (root.terrainSize / 2).toFixed(0), "]");
-      console.log("                  Y=[0,", (root.terrainSize * 0.3).toFixed(0), "]");
+      console.log("                  Y=[0,", maxHeight3D.toFixed(0), "]");
 
       // Auto-position camera to view terrain from above
       positionCameraForTerrain();
@@ -164,16 +207,11 @@ Item {
   function positionCameraForTerrain() {
     // Calculate good viewing distance based on terrain size
     var terrainDiagonal = Math.sqrt(2) * root.terrainSize;  // Diagonal of terrain
-    var targetHeight = root.terrainSize * 0.3;  // Max terrain height
+    var targetHeight = internal.maxHeight3D || root.terrainSize * 0.1;  // Use actual terrain height
 
     // Camera should be far enough to see the whole terrain
     // Distance = terrain diagonal * 0.8 gives a good overview
     var viewDistance = terrainDiagonal * 0.8;
-
-    // Position camera above and behind terrain center
-    // Looking down at ~45 degree angle
-    var cameraHeight = viewDistance * 0.6;  // 60% of distance as height
-    var cameraZ = viewDistance * 0.7;       // 70% of distance behind
 
     // Update camera controller parameters
     cameraController.distance = viewDistance;
@@ -229,6 +267,9 @@ Item {
     TerrainMesh {
       id: terrainMesh
       position: Qt.vector3d(0, 0, 0)
+      // Scale to match actual extent aspect ratio
+      // X = width direction, Z = height direction
+      scale: Qt.vector3d(internal.scaleX, 1.0, internal.scaleZ)
       resolution: 64
       terrainSize: root.terrainSize
       heightScale: 1.0  // Heights are already normalized in loadRealTerrain()
@@ -320,6 +361,9 @@ Item {
     id: internal
     property real minHeight: 0
     property real maxHeight: 0
+    property real maxHeight3D: 0  // Max height in 3D units (for camera positioning)
+    property real scaleX: 1.0     // Scale factor for X axis (width)
+    property real scaleZ: 1.0     // Scale factor for Z axis (height/depth)
   }
 
   Connections {

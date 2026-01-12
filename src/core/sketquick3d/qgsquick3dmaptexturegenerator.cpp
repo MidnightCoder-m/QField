@@ -159,36 +159,38 @@ void QgsQuick3DMapTextureGenerator::render()
     qDebug() << "3D Texture: Using DEM extent transformed to project CRS";
   }
 
-  // Make the extent square (terrain mesh is square, so texture should match)
-  // Expand the smaller dimension to match the larger one
+  // Calculate texture dimensions based on aspect ratio
+  // Keep the larger dimension at mTextureSize, scale the other proportionally
   double width = renderExtent.width();
   double height = renderExtent.height();
-  if ( width > height )
+  int texWidth, texHeight;
+
+  if ( width >= height )
   {
-    // Expand height
-    double diff = ( width - height ) / 2.0;
-    renderExtent.setYMinimum( renderExtent.yMinimum() - diff );
-    renderExtent.setYMaximum( renderExtent.yMaximum() + diff );
+    texWidth = mTextureSize;
+    texHeight = static_cast<int>( mTextureSize * height / width );
   }
-  else if ( height > width )
+  else
   {
-    // Expand width
-    double diff = ( height - width ) / 2.0;
-    renderExtent.setXMinimum( renderExtent.xMinimum() - diff );
-    renderExtent.setXMaximum( renderExtent.xMaximum() + diff );
+    texHeight = mTextureSize;
+    texWidth = static_cast<int>( mTextureSize * width / height );
   }
 
-  // Set up map settings with square output
+  // Ensure minimum size
+  texWidth = qMax( texWidth, 256 );
+  texHeight = qMax( texHeight, 256 );
+
+  // Set up map settings with proper aspect ratio
   QgsMapSettings mapSettings;
-  mapSettings.setOutputSize( QSize( mTextureSize, mTextureSize ) );
+  mapSettings.setOutputSize( QSize( texWidth, texHeight ) );
   mapSettings.setExtent( renderExtent );
   mapSettings.setDestinationCrs( mProject->crs() );
   mapSettings.setTransformContext( mProject->transformContext() );
   mapSettings.setBackgroundColor( QColor( 80, 80, 80 ) ); // Dark gray background for no-data areas
 
-  qDebug() << "3D Texture: Render extent (squared):" << renderExtent.toString();
+  qDebug() << "3D Texture: Render extent:" << renderExtent.toString();
   qDebug() << "3D Texture: Render extent size:" << renderExtent.width() << "x" << renderExtent.height();
-  qDebug() << "3D Texture: Output size:" << mTextureSize << "x" << mTextureSize;
+  qDebug() << "3D Texture: Output size:" << texWidth << "x" << texHeight;
   qDebug() << "3D Texture: Project CRS:" << mProject->crs().authid();
 
   // Collect layers to render (raster layers only for now, excluding DEM)
