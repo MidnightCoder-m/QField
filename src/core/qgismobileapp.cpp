@@ -88,6 +88,7 @@
 #include "maplayermodel.h"
 #include "maptoscreen.h"
 #include "maptoview3d.h"
+#include "ar/arstakeoutcontroller.h"
 #include "messagelogmodel.h"
 #include "navigation.h"
 #include "navigationmodel.h"
@@ -473,6 +474,9 @@ void QgisMobileapp::initDeclarative( QQmlEngine *engine )
   qmlRegisterType<Quick3DTerrainProvider>( "org.qfield", 1, 0, "Quick3DTerrainProvider" );
   qmlRegisterType<Quick3DMapTextureData>( "org.qfield", 1, 0, "Quick3DMapTextureData" );
   qmlRegisterType<MapToView3D>( "org.qfield", 1, 0, "MapToView3D" );
+
+  // Register AR QML types
+  qmlRegisterType<ArStakeoutController>( "org.qfield", 1, 0, "ArStakeoutController" );
 
   // Register QField QML types
   qRegisterMetaType<PlatformUtilities::Capabilities>( "PlatformUtilities::Capabilities" );

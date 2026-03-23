@@ -54,5 +54,8 @@
     <key>NSBluetoothAlwaysUsageDescription</key>
     <string>Bluetooth access needed to connect an external GNSS device.</string>
 
+    <key>NSCameraUsageDescription</key>
+    <string>Camera access needed for AR stakeout view.</string>
+
 </dict>
 </plist>
