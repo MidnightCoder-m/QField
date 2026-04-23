@@ -255,6 +255,7 @@ ApplicationWindow {
 
   signal closeMeasureTool
   signal close3DView
+  signal closeArStakeout
 
   signal changeMode(string mode)
   signal toggleDigitizeMode
@@ -301,6 +302,9 @@ ApplicationWindow {
       },
       State {
         name: '3d'
+      },
+      State {
+        name: 'ar'
       }
     ]
     state: "browse"
@@ -322,7 +326,7 @@ ApplicationWindow {
     if (stateMachine.state === mode) {
       return;
     }
-    if (stateMachine.state !== 'measure' && stateMachine.state !== '3d') {
+    if (stateMachine.state !== 'measure' && stateMachine.state !== '3d' && stateMachine.state !== 'ar') {
       stateMachine.lastState = stateMachine.state;
     }
     stateMachine.state = mode;
@@ -349,6 +353,8 @@ ApplicationWindow {
       break;
     case '3d':
       break;
+    case 'ar':
+      break;
     }
   }
 
@@ -364,6 +370,10 @@ ApplicationWindow {
         mapCanvas.mapSettings.extent = ext;
       }
     }
+    changeMode(stateMachine.lastState);
+  }
+
+  onCloseArStakeout: {
     changeMode(stateMachine.lastState);
   }
 
@@ -790,6 +800,31 @@ ApplicationWindow {
           color: "white"
           font.pixelSize: 16
           font.bold: true
+        }
+      }
+    }
+
+    Loader {
+      id: arStakeoutLoader
+      anchors.fill: parent
+      active: stateMachine.state === 'ar'
+      visible: active
+      z: 100
+
+      source: "qrc:/qml/ar/ArStakeoutView.qml"
+
+      onLoaded: {
+        item.navigation = navigation;
+        item.positionSource = positionSource;
+        item.closed.connect(function () {
+          mainWindow.closeArStakeout();
+        });
+      }
+
+      onStatusChanged: {
+        if (status === Loader.Error) {
+          mainWindow.closeArStakeout();
+          displayToast(qsTr("Failed to load AR stakeout view"));
         }
       }
     }
@@ -2223,6 +2258,15 @@ ApplicationWindow {
             mainWindow.close3DView();
           }
         }
+      }
+
+      QfActionButton {
+        id: closeArStakeout
+        visible: stateMachine.state === 'ar'
+        toolImage: Theme.getThemeVectorIcon("ic_navigation_flag_purple_24dp")
+        toolText: qsTr('Close AR stakeout')
+
+        onClicked: mainWindow.closeArStakeout()
       }
 
       QfActionButton {
@@ -4212,6 +4256,23 @@ ApplicationWindow {
       onTriggered: {
         preciseViewMenu.popup(navigationMenu.x, navigationMenu.y - preciseViewItem.y);
         highlighted = false;
+      }
+    }
+
+    MenuSeparator {
+      width: parent.width
+    }
+
+    MenuItem {
+      id: arStakeoutItem
+      text: qsTr("AR Stakeout")
+      height: 48
+      leftPadding: Theme.menuItemLeftPadding
+      font: Theme.defaultFont
+      enabled: positionSource.active
+
+      onTriggered: {
+        changeMode('ar');
       }
     }
 

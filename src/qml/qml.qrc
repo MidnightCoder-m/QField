@@ -162,5 +162,9 @@
         <file>3d/TouchCameraController.qml</file>
         <file>3d/TerrainMesh.qml</file>
         <file>3d/Rubberband3D.qml</file>
+        <file>ar/ArStakeoutView.qml</file>
+        <file>ar/ArStakeoutMarker.qml</file>
+        <file>ar/ArDirectionHint.qml</file>
+        <file>ar/ArStakeoutHud.qml</file>
     </qresource>
 </RCC>
