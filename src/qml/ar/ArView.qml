@@ -18,10 +18,11 @@ Item {
   readonly property int nearestFeatureCount: 10
   readonly property real featureSearchRadius: 1000.0
 
-  property Positioning positioningSource: null
+  property alias positioningSource: arMarkerModel.positioningSource
   property bool entrancePlayed: false
 
   signal closeRequested
+  signal featureFormRequested(string layerId, var featureId)
 
   focus: true
 
@@ -71,7 +72,7 @@ Item {
   Rectangle {
     id: cameraBackground
     anchors.fill: parent
-    color: "black"
+    color: Theme.darkGray
   }
 
   MediaDevices {
@@ -106,7 +107,6 @@ Item {
   ArMarkerModel {
     id: arMarkerModel
     active: arView.visible
-    positioningSource: arView.positioningSource
     project: qgisProject
     viewportSize: Qt.size(markersContainer.width, markersContainer.height)
     horizontalFieldOfView: markersContainer.width < markersContainer.height ? arView.portraitHorizontalFieldOfView : arView.landscapeHorizontalFieldOfView
@@ -127,7 +127,10 @@ Item {
     Repeater {
       id: markersRepeater
       model: arMarkerModel
-      delegate: ArMarker {}
+      delegate: ArMarker {
+        id: markerDelegate
+        onClicked: arView.featureFormRequested(markerDelegate.layerId, markerDelegate.featureId)
+      }
     }
   }
 
@@ -139,9 +142,7 @@ Item {
     width: headerLabel.width + 32
     height: headerLabel.height + 16
     radius: height / 2
-    color: "#bf000000"
-    border.color: "#40ffffff"
-    border.width: 1
+    color: Theme.darkGraySemiOpaque
 
     Text {
       id: headerLabel
@@ -152,7 +153,7 @@ Item {
         }
         return arMarkerModel.count > 0 ? qsTr("Displaying %1 nearest features").arg(arMarkerModel.count) : qsTr("No features within %1 m").arg(arView.featureSearchRadius);
       }
-      color: "white"
+      color: Theme.light
       font: Theme.strongTipFont
     }
   }
@@ -164,7 +165,7 @@ Item {
     anchors.horizontalCenter: parent.horizontalCenter
     visible: !isNaN(arMarkerModel.currentHeading)
     text: qsTr("Heading %1°").arg(Math.round(arMarkerModel.currentHeading))
-    color: "#bfffffff"
+    color: Theme.light
     font: Theme.tipFont
   }
 
@@ -179,7 +180,7 @@ Item {
       visible: cameraPermission.status !== Qt.PermissionStatus.Granted
       width: parent.width
       text: qsTr("The AR view needs access to the camera")
-      color: "white"
+      color: Theme.light
       font: Theme.defaultFont
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
@@ -198,7 +199,7 @@ Item {
       visible: arView.positioningSource && !arView.positioningSource.active
       width: parent.width
       text: qsTr("Positioning is disabled")
-      color: "white"
+      color: Theme.light
       font: Theme.defaultFont
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
@@ -217,7 +218,7 @@ Item {
       visible: arView.positioningSource && arView.positioningSource.active && !arMarkerModel.positionAvailable
       width: parent.width
       text: qsTr("Waiting for a position fix…")
-      color: "white"
+      color: Theme.light
       font: Theme.defaultFont
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
@@ -228,7 +229,7 @@ Item {
       visible: !arMarkerModel.attitudeAvailable
       width: parent.width
       text: qsTr("This device does not provide the orientation sensors required by the AR view")
-      color: "white"
+      color: Theme.light
       font: Theme.defaultFont
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap

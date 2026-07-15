@@ -835,7 +835,7 @@ ApplicationWindow {
       id: mapCanvasMap
       objectName: "mapCanvas"
 
-      property bool isEnabled: !mapCanvas3DLoader.active && !dashBoard.opened && !aboutDialog.visible && !welcomeScreen.visible && !qfieldSettings.visible && !qfieldLocalDataPickerScreen.visible && !qfieldCloudScreen.visible && !qfieldCloudPopup.visible && !codeReader.visible && !sketcher.visible && !overlayFeatureFormDrawer.opened && !rotateFeaturesToolbar.rotateFeaturesRequested
+      property bool isEnabled: !mapCanvas3DLoader.active && !arViewLoader.active && !dashBoard.opened && !aboutDialog.visible && !welcomeScreen.visible && !qfieldSettings.visible && !qfieldLocalDataPickerScreen.visible && !qfieldCloudScreen.visible && !qfieldCloudPopup.visible && !codeReader.visible && !sketcher.visible && !overlayFeatureFormDrawer.opened && !rotateFeaturesToolbar.rotateFeaturesRequested
 
       interactive: isEnabled && !screenLocker.enabled && !snapToCommonAngleMenu.visible
       isMapRotationEnabled: qfieldSettings.enableMapRotation
@@ -4600,6 +4600,9 @@ ApplicationWindow {
 
     focus: visible
 
+    // Raise above the AR overlay so a tapped marker's form shows over the live camera
+    z: arViewLoader.active ? 101 : 0
+
     anchors {
       right: parent.right
       bottom: parent.bottom
@@ -4662,6 +4665,7 @@ ApplicationWindow {
     radius: 6.0
     color: "#80000000"
     source: featureListForm
+    z: featureListForm.z
   }
 
   BookmarkList {
@@ -5498,6 +5502,8 @@ ApplicationWindow {
     anchors.fill: parent
     active: false
     visible: status === Loader.Ready
+    // Full-screen overlay tier, matching the 3D view; the feature form raises itself above this while shown
+    z: 100
 
     source: "qrc:/qml/ar/ArView.qml"
 
@@ -5513,6 +5519,16 @@ ApplicationWindow {
       item.positioningSource = positionSource;
       item.closeRequested.connect(function () {
         arViewLoader.active = false;
+      });
+      item.featureFormRequested.connect(function (layerId, featureId) {
+        const layer = qgisProject.mapLayer(layerId);
+        if (!layer) {
+          return;
+        }
+        // Open the tapped feature's form over the live camera, as if it had been identified on the canvas
+        featureListForm.model.setFeatures(layer, '@id = ' + featureId);
+        featureListForm.selection.focusedItem = 0;
+        featureListForm.state = "FeatureForm";
       });
     }
 
