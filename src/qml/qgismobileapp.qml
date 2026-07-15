@@ -3568,6 +3568,10 @@ ApplicationWindow {
       activate3DMode();
     }
 
+    onToggleArView: {
+      activateArView();
+    }
+
     onShowPrintLayouts: p => {
       if (layoutListInstantiator.count > 1) {
         printMenu.popup(p.x, p.y);
@@ -3642,6 +3646,12 @@ ApplicationWindow {
     if (stateMachine.state !== '3d') {
       changeMode('3d');
     }
+  }
+
+  function activateArView() {
+    mainMenu.close();
+    dashBoard.close();
+    arViewLoader.active = true;
   }
 
   QfMenu {
@@ -5481,6 +5491,37 @@ ApplicationWindow {
     visible: false
 
     Component.onCompleted: focusstack.addFocusTaker(this)
+  }
+
+  Loader {
+    id: arViewLoader
+    anchors.fill: parent
+    active: false
+    visible: status === Loader.Ready
+
+    source: "qrc:/qml/ar/ArView.qml"
+
+    onActiveChanged: {
+      if (active) {
+        mapCanvasMap.freeze('ar');
+      } else {
+        mapCanvasMap.unfreeze('ar');
+      }
+    }
+
+    onLoaded: {
+      item.positioningSource = positionSource;
+      item.closeRequested.connect(function () {
+        arViewLoader.active = false;
+      });
+    }
+
+    onStatusChanged: {
+      if (status === Loader.Error) {
+        arViewLoader.active = false;
+        displayToast(qsTr("Failed to load AR view"));
+      }
+    }
   }
 
   AppExpressionContextScopesGenerator {

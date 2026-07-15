@@ -12,6 +12,8 @@ set(QFIELD_CORE_SRCS
     3d/quick3dgeometryconfiguration.cpp
     3d/quick3dgeometryutils.cpp
     3d/maptoview3d.cpp
+    ar/arattitudeestimator.cpp
+    ar/armarkermodel.cpp
     utils/authutils.cpp
     utils/coordinatereferencesystemutils.cpp
     utils/expressioncontextutils.cpp
@@ -166,6 +168,8 @@ set(QFIELD_CORE_HDRS
     3d/quick3dgeometry.h
     3d/quick3dgeometryconfiguration.h
     3d/maptoview3d.h
+    ar/arattitudeestimator.h
+    ar/armarkermodel.h
     utils/authutils.h
     utils/coordinatereferencesystemutils.h
     utils/expressioncontextutils.h
@@ -389,6 +393,7 @@ target_include_directories(
          ${CMAKE_SOURCE_DIR}/src/core/platforms
          ${CMAKE_SOURCE_DIR}/src/core/qgsquick
          ${CMAKE_SOURCE_DIR}/src/core/3d
+         ${CMAKE_SOURCE_DIR}/src/core/ar
          ${CMAKE_SOURCE_DIR}/src/core/utils
          ${CMAKE_SOURCE_DIR}/src/core/positioning
          ${CMAKE_SOURCE_DIR}/src/core/processing

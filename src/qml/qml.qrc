@@ -168,5 +168,7 @@
         <file>3d/TerrainMesh.qml</file>
         <file>3d/Rubberband3D.qml</file>
         <file>3d/FeatureListSelectionHighlight3D.qml</file>
+        <file>ar/ArView.qml</file>
+        <file>ar/ArMarker.qml</file>
     </qresource>
 </RCC>

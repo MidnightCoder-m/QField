@@ -19,6 +19,7 @@ Drawer {
   signal showProjectFolder
   signal toggleMeasurementTool
   signal toggle3DView
+  signal toggleArView
   signal returnHome
 
   property bool preventFromOpening: overlayFeatureFormDrawer.visible
@@ -147,6 +148,20 @@ Drawer {
             bgcolor: "transparent"
             onClicked: {
               toggle3DView();
+              highlighted = false;
+            }
+          }
+
+          QfToolButton {
+            id: arViewButton
+            objectName: "arViewButton"
+            anchors.verticalCenter: parent.verticalCenter
+            round: true
+            iconSource: Theme.getThemeVectorIcon("ic_augmented_reality_white_24dp")
+            iconColor: Theme.mainTextColor
+            bgcolor: "transparent"
+            onClicked: {
+              toggleArView();
               highlighted = false;
             }
           }

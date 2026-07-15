@@ -39,6 +39,7 @@
 #endif
 #include "appexpressioncontextscopesgenerator.h"
 #include "appinterface.h"
+#include "armarkermodel.h"
 #include "attributeformmodel.h"
 #include "audioanalyzer.h"
 #include "audiorecorder.h"
@@ -505,6 +506,7 @@ void QgisMobileapp::initDeclarative( QQmlEngine *engine )
   qmlRegisterType<ViewStatus>( "org.qfield", 1, 0, "ViewStatus" );
   qmlRegisterType<GridModel>( "org.qfield", 1, 0, "GridModel" );
   qmlRegisterType<CameraOrientationNormalizer>( "org.qfield", 1, 0, "CameraOrientationNormalizer" );
+  qmlRegisterType<ArMarkerModel>( "org.qfield", 1, 0, "ArMarkerModel" );
   qmlRegisterUncreatableType<GridAnnotation>( "org.qfield", 1, 0, "gridAnnotation", "Used for property values" );
   qmlRegisterUncreatableMetaObject( GridAnnotation::staticMetaObject, "org.qfield", 1, 0, "GridAnnotation", "Used to access enum values" );
 
