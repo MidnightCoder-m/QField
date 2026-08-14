@@ -111,7 +111,8 @@
           "name": "webview2",
           "platform": "windows"
         }
-      ]
+      ],
+      "platform": "!emscripten"
     },
     {
       "name": "sentry-cocoa",

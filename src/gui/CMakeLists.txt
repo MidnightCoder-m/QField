@@ -69,7 +69,11 @@ target_compile_features(qfield_gui PUBLIC cxx_std_20)
 set_target_properties(qfield_gui PROPERTIES AUTOMOC TRUE)
 
 target_link_libraries(qfield_gui PUBLIC qfield_core Qt::Core Qt::Gui Qt::Quick
-                                        Qt::WebView Qt::Widgets)
+                                        Qt::Widgets)
+
+if(WITH_WEBVIEW)
+  target_link_libraries(qfield_gui PUBLIC Qt::WebView)
+endif()
 
 install(FILES ${QFIELD_GUI_HDRS}
               "${CMAKE_CURRENT_BINARY_DIR}/qfield_gui_export.h"

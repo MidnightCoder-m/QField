@@ -163,6 +163,11 @@ function(create_executable)
   target_link_libraries(${exe_TARGET} PRIVATE qfield_app qfield_gui qfield_3d
                                               qfield_core)
 
+  # main.cpp initialises QtWebView before the application exists.
+  if(WITH_WEBVIEW)
+    target_compile_definitions(${exe_TARGET} PRIVATE WITH_WEBVIEW)
+  endif()
+
   if(ANDROID)
     target_link_libraries(${exe_TARGET} PRIVATE qfield_service)
   endif()

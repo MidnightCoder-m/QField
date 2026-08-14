@@ -50,7 +50,9 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTranslator>
+#ifdef WITH_WEBVIEW
 #include <QtWebView/QtWebView>
+#endif
 
 #if defined( Q_OS_IOS )
 #include <QSslCertificate>
@@ -210,7 +212,9 @@ int main( int argc, char **argv )
 
   delete dummyApp;
 
+#ifdef WITH_WEBVIEW
   QtWebView::initialize();
+#endif
 
   QgsApplication app( argc, argv, true, profilePath, QStringLiteral( "mobile" ) );
 
