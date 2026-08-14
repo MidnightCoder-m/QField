@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=0" />
+    <title>QField</title>
+    <style>
+      /* The container has to have a real size before qtLoad runs. Qt measures
+         it once while building its QScreen and never revisits it, so a hidden
+         or unsized element yields a 0x0 screen, a 0x0 window, no canvas, and a
+         blank page with nothing logged anywhere.
+
+         Qt's stock shell hides the container behind a spinner and reveals it
+         from onLoaded, which is after that measurement. Here the spinner is an
+         overlay on top of an always-visible, explicitly sized container
+         instead. */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #ffffff;
+      }
+      #screen {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font: 16px system-ui, sans-serif;
+        color: #80cc28;
+        background: #ffffff;
+      }
+      #overlay.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="screen"></div>
+    <div id="overlay">Loading QField…</div>
+
+    <script src="qfield.js"></script>
+    <script src="qtloader.js"></script>
+    <script type="text/javascript">
+      (async () => {
+        const screen = document.querySelector("#screen");
+        const overlay = document.querySelector("#overlay");
+
+        // Whether layout has happened by the time this script runs is a race,
+        // so wait for a real size rather than hoping for one.
+        await new Promise(resolve => {
+          const check = () => {
+            const rect = screen.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+              resolve();
+            } else {
+              requestAnimationFrame(check);
+            }
+          };
+          check();
+        });
+
+        try {
+          await qtLoad({
+            qt: {
+              onLoaded: () => overlay.classList.add("hidden"),
+              onExit: exitData => {
+                overlay.classList.remove("hidden");
+                overlay.textContent = `QField exited: ${exitData.code ?? ""} ${exitData.text ?? ""}`;
+              },
+              entryFunction: window.qfield_entry,
+              containerElements: [screen]
+            }
+          });
+        } catch (e) {
+          console.error("[qfield] qtLoad failed:", e, e.stack);
+        }
+      })();
+    </script>
+  </body>
+</html>

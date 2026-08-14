@@ -132,6 +132,11 @@ function(create_executable)
                ${CMAKE_SOURCE_DIR}/src/gui/qml ${CMAKE_SOURCE_DIR}/src/app/qml)
 
     set(PROJECT_NAME ${exe_TARGET})
+  elseif(EMSCRIPTEN)
+    # A plain executable here is a .js file with nothing to start it. Qt's
+    # wrapper is what emits the page and the loader alongside the binary, and
+    # what sets the wasm defaults the link needs.
+    qt_add_executable(${exe_TARGET} ${QFIELD_SOURCES})
   else()
     add_executable(${exe_TARGET} ${exe_EXTRA_ARGS} ${QFIELD_SOURCES})
   endif()
@@ -224,6 +229,46 @@ function(create_executable)
 
   if(WITH_VCPKG) # this triggers the initialisation of static qca ossl plugin.
     target_compile_definitions(${exe_TARGET} PUBLIC HAVE_STATIC_QCA_PLUGINS)
+  endif()
+
+  if(EMSCRIPTEN)
+    # Not through the QT_WASM_* target properties: they are read while the
+    # target is finalised, which has already happened by the time a function
+    # like this one runs, and setting them afterwards is ignored without a
+    # warning. Check what actually landed with grep -o
+    # '\-sPTHREAD_POOL_SIZE=[0-9]*' build.ninja
+    target_link_options(
+      ${exe_TARGET}
+      PRIVATE
+      # A worker cannot be spawned synchronously from inside wasm: starting one
+      # needs a trip back to the JavaScript event loop, which never comes while
+      # main() is running. Every thread Qt will ask for has to exist already.
+      -sPTHREAD_POOL_SIZE=8
+      # Start with the heap the application is going to need rather than growing
+      # into it. Qt asks for ALLOW_MEMORY_GROWTH in the interface link options
+      # of Qt6::Platform, which land after these and cannot be overridden from
+      # here, and growth on top of -pthread means resizing a SharedArrayBuffer —
+      # emcc warns about that combination by name on every link.
+      -sINITIAL_MEMORY=1073741824
+      # Not the objects, which keep the build type's optimisation: this is the
+      # whole-module wasm-opt pass at the end of the link, and it dies with
+      # SIGILL running its -O3 pipeline over a binary this size. Nothing about
+      # the size of this binary has been looked at yet; when that starts, this
+      # is the first line to revisit.
+      -O1)
+
+    # Qt regenerates the page on every link, so QField's goes over the top
+    # afterwards. A standalone target rather than a POST_BUILD command: the
+    # shell is not a source of the executable, so editing it triggers no relink
+    # and a POST_BUILD copy would silently never fire.
+    add_custom_target(
+      ${exe_TARGET}_wasm_shell ALL
+      COMMAND
+        ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/platform/wasm/qfield.html"
+        "$<TARGET_FILE_DIR:${exe_TARGET}>/${exe_TARGET}.html"
+      COMMENT "Installing the QField wasm shell over Qt's generated one"
+      VERBATIM)
+    add_dependencies(${exe_TARGET}_wasm_shell ${exe_TARGET})
   endif()
 
   set_target_properties(${exe_TARGET} PROPERTIES AUTORCC TRUE)
