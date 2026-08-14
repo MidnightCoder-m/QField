@@ -5,15 +5,7 @@
     <meta name="viewport" content="width=device-width, height=device-height, user-scalable=0" />
     <title>QField</title>
     <style>
-      /* The container has to have a real size before qtLoad runs. Qt measures
-         it once while building its QScreen and never revisits it, so a hidden
-         or unsized element yields a 0x0 screen, a 0x0 window, no canvas, and a
-         blank page with nothing logged anywhere.
-
-         Qt's stock shell hides the container behind a spinner and reveals it
-         from onLoaded, which is after that measurement. Here the spinner is an
-         overlay on top of an always-visible, explicitly sized container
-         instead. */
+      /* Qt measures the container once, while building its QScreen, and never revisits it. */
       html,
       body {
         margin: 0;
@@ -25,8 +17,6 @@
       #screen {
         position: absolute;
         inset: 0;
-        width: 100%;
-        height: 100%;
       }
       #overlay {
         position: absolute;
@@ -47,18 +37,17 @@
     <div id="screen"></div>
     <div id="overlay">Loading QField…</div>
 
-    <script src="qfield.js"></script>
+    <script src="@QFIELD_WASM_TARGET@.js"></script>
     <script src="qtloader.js"></script>
     <script type="text/javascript">
       (async () => {
-        const screen = document.querySelector("#screen");
+        const container = document.querySelector("#screen");
         const overlay = document.querySelector("#overlay");
 
-        // Whether layout has happened by the time this script runs is a race,
-        // so wait for a real size rather than hoping for one.
+        // Whether layout has happened by the time this runs is a race, so wait for a real size.
         await new Promise(resolve => {
           const check = () => {
-            const rect = screen.getBoundingClientRect();
+            const rect = container.getBoundingClientRect();
             if (rect.width > 0 && rect.height > 0) {
               resolve();
             } else {
@@ -68,16 +57,20 @@
           check();
         });
 
+        // QField opens whatever it is handed as its last argument.
+        const project = new URLSearchParams(window.location.search).get("project");
+
         try {
           await qtLoad({
+            arguments: project ? [project] : [],
             qt: {
               onLoaded: () => overlay.classList.add("hidden"),
               onExit: exitData => {
                 overlay.classList.remove("hidden");
                 overlay.textContent = `QField exited: ${exitData.code ?? ""} ${exitData.text ?? ""}`;
               },
-              entryFunction: window.qfield_entry,
-              containerElements: [screen]
+              entryFunction: window.@QFIELD_WASM_TARGET@_entry,
+              containerElements: [container]
             }
           });
         } catch (e) {
