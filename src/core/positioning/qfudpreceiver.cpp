@@ -114,12 +114,17 @@ void QfUdpReceiver::handleStateChanged( QAbstractSocket::SocketState state )
       }
       break;
 
+    // Multicast needs QNetworkInterface, which Qt drops where there are no interfaces to enumerate.
     case QAbstractSocket::BoundState:
+#if QT_CONFIG( networkinterface )
       mSocket->joinMulticastGroup( QHostAddress( mAddress ) );
+#endif
       break;
 
     case QAbstractSocket::ClosingState:
+#if QT_CONFIG( networkinterface )
       mSocket->leaveMulticastGroup( QHostAddress( mAddress ) );
+#endif
       break;
 
     case QAbstractSocket::HostLookupState:
