@@ -47,8 +47,10 @@
 #include <QLabel>
 #include <QLocale>
 #include <QMainWindow>
+#include <QRandomGenerator>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QSurfaceFormat>
 #include <QTranslator>
 #ifdef WITH_WEBVIEW
 #include <QtWebView/QtWebView>
