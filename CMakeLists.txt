@@ -106,14 +106,24 @@ if(WITH_CCACHE)
   include(ccache)
 endif()
 
+# Bluetooth, serial ports and NFC are how QField talks to external GNSS
+# receivers and tags. A browser reaches none of them, and the Qt modules behind
+# them have no wasm build, so default them off there rather than letting the
+# dependency resolution fail on a platform that could never use them.
+if(EMSCRIPTEN)
+  set(_QFIELD_EXTERNAL_DEVICES_DEFAULT OFF)
+else()
+  set(_QFIELD_EXTERNAL_DEVICES_DEFAULT ON)
+endif()
+
 set(WITH_BLUETOOTH
-    ON
+    ${_QFIELD_EXTERNAL_DEVICES_DEFAULT}
     CACHE BOOL "Enable bluetooth support")
 set(WITH_SERIALPORT
-    ON
+    ${_QFIELD_EXTERNAL_DEVICES_DEFAULT}
     CACHE BOOL "Enable serial port support")
 set(WITH_NFC
-    ON
+    ${_QFIELD_EXTERNAL_DEVICES_DEFAULT}
     CACHE BOOL "Enable NFC support")
 
 set(SENTRY_DSN "" CACHE STRING "The sentry dsn for logging purpose. If not set, sentry will be disabled")

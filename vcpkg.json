@@ -62,7 +62,10 @@
         "qml"
       ]
     },
-    "qtconnectivity",
+    {
+      "name": "qtconnectivity",
+      "platform": "!emscripten"
+    },
     "qtdeclarative",
     "qtimageformats",
     "qtlocation",
@@ -87,7 +90,7 @@
     },
     {
       "name": "qtserialport",
-      "platform": "!ios"
+      "platform": "!ios & !emscripten"
     },
     {
       "name": "qttools",
