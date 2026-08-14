@@ -9,13 +9,23 @@ if(VCPKG_TARGET_IS_IOS)
         HEAD_REF master
     )
 else()
+    # QtKeychain treats emscripten as a plain unix and demands Qt6DBus, and has no backend for it.
+    if(VCPKG_TARGET_IS_EMSCRIPTEN)
+        set(QTKEYCHAIN_PATCHES emscripten.patch)
+    endif()
+
     vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO frankosterfeld/qtkeychain
         REF "${VERSION}"
         SHA512 b1068ae513d5eab8f300186497ddcce4075e11a2a569deddbc949177efaa27970ed7bdce0b1aff61a021144540e942f60c9259b975601a92c60b8a742754624a
         HEAD_REF master
+        PATCHES ${QTKEYCHAIN_PATCHES}
     )
+
+    if(VCPKG_TARGET_IS_EMSCRIPTEN)
+        file(COPY "${CMAKE_CURRENT_LIST_DIR}/keychain_emscripten.cpp" DESTINATION "${SOURCE_PATH}/qtkeychain")
+    endif()
 endif()
 
 if(VCPKG_CROSSCOMPILING)
