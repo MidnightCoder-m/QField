@@ -84,7 +84,8 @@ void initGraphics()
 
 void initAuthManager( QgsAuthManager *authManager )
 {
-#ifndef Q_OS_LINUX
+// wasm has no keychain either, and QGIS waiting for one in a nested event loop aborts the app.
+#if !defined( Q_OS_LINUX ) && !defined( Q_OS_WASM )
   if ( authManager->verifyMasterPassword( QStringLiteral( "qfield" ) ) )
   {
     // migrating authentication database
@@ -219,10 +220,7 @@ int main( int argc, char **argv )
 #endif
 
 #ifdef Q_OS_WASM
-  // exec() does not block in a browser. It unwinds the stack to hand control
-  // back to the JavaScript event loop and never returns to it, so anything
-  // living in main() is destroyed before the first frame is drawn. The
-  // application and the QML engine below are deliberately never deleted.
+  // exec() unwinds the stack instead of blocking here, so anything main() owns dies before the first frame.
   QgsApplication &app = *new QgsApplication( argc, argv, true, profilePath, QStringLiteral( "mobile" ) );
 #else
   QgsApplication app( argc, argv, true, profilePath, QStringLiteral( "mobile" ) );
@@ -386,6 +384,7 @@ int main( int argc, char **argv )
   qputenv( "QT_QUICK_CONTROLS_MATERIAL_VARIANT", QByteArray( "Dense" ) );
 
 #ifdef Q_OS_WASM
+  // Outlives exec(), like the application above.
   new QgisMobileapp( &app );
 #else
   QgisMobileapp mApp( &app );
