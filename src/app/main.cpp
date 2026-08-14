@@ -218,7 +218,15 @@ int main( int argc, char **argv )
   QtWebView::initialize();
 #endif
 
+#ifdef Q_OS_WASM
+  // exec() does not block in a browser. It unwinds the stack to hand control
+  // back to the JavaScript event loop and never returns to it, so anything
+  // living in main() is destroyed before the first frame is drawn. The
+  // application and the QML engine below are deliberately never deleted.
+  QgsApplication &app = *new QgsApplication( argc, argv, true, profilePath, QStringLiteral( "mobile" ) );
+#else
   QgsApplication app( argc, argv, true, profilePath, QStringLiteral( "mobile" ) );
+#endif
 
   if ( !qfieldTranslatorLoaded || qfieldTranslator->isEmpty() )
   {
@@ -377,7 +385,11 @@ int main( int argc, char **argv )
   qputenv( "QT_QUICK_CONTROLS_STYLE", QByteArray( "Material" ) );
   qputenv( "QT_QUICK_CONTROLS_MATERIAL_VARIANT", QByteArray( "Dense" ) );
 
+#ifdef Q_OS_WASM
+  new QgisMobileapp( &app );
+#else
   QgisMobileapp mApp( &app );
+#endif
 
 #ifdef WITH_SPIX
   spix::AnyRpcServer server;
