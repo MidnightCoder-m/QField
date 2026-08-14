@@ -38,6 +38,11 @@ if(VCPKG_CROSSCOMPILING)
 endif()
 
 list(APPEND QTKEYCHAIN_OPTIONS -DBUILD_TEST_APPLICATION:BOOL=OFF)
+
+if(VCPKG_TARGET_IS_EMSCRIPTEN)
+    # include(CTest) builds the autotests anyway, and they fail on embind's _emval_* symbols.
+    list(APPEND QTKEYCHAIN_OPTIONS -DBUILD_TESTING:BOOL=OFF)
+endif()
 list(APPEND QTKEYCHAIN_OPTIONS -DLIBSECRET_SUPPORT:BOOL=OFF)
 
 # FIXME: Why does build translations fail on arm64-windows?

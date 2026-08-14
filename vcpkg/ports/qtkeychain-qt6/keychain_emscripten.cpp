@@ -29,3 +29,8 @@ void WritePasswordJobPrivate::scheduledStart()
 {
   refuse( q );
 }
+
+void DeletePasswordJobPrivate::scheduledStart()
+{
+  refuse( q );
+}
