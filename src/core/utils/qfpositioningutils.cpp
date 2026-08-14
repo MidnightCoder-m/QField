@@ -235,8 +235,8 @@ QgsRectangle QfPositioningUtils::createExtentForDevice( const QfGnssPositionInfo
   {
     QfPositioningUtils::initTimeZones();
 
-    QTimeZone tz = QTimeZone::systemTimeZone();
-    const int offset = static_cast<double>( tz.offsetFromUtc( QDateTime( QDate( 2026, 1, 1 ), QTime( 0, 0 ), QTimeZone::utc() ) ) );
+    // Not QTimeZone::systemTimeZone(): it needs QT_FEATURE_timezone, off where Qt has no tz database.
+    const int offset = QDateTime( QDate( 2026, 1, 1 ), QTime( 0, 0 ) ).offsetFromUtc();
     if ( sTimeZones->contains( offset ) )
     {
       extent = sTimeZones->value( offset );
