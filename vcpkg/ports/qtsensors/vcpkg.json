@@ -15,11 +15,12 @@
       "features": [
         "dbus"
       ],
-      "platform": "!(windows & static) & !android & !ios"
+      "platform": "!(windows & static) & !android & !ios & !emscripten"
     },
     {
       "name": "qtconnectivity",
-      "default-features": false
+      "default-features": false,
+      "platform": "!emscripten"
     }
   ],
   "features": {
