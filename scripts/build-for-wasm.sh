@@ -47,12 +47,19 @@ if [ -z "${DEPS_DIR}" ]; then
 	fi
 fi
 
+# The chainload toolchain has to be named here as well as in the triplet. The
+# triplet's copy governs how the ports are built; this one governs QField
+# itself, and without it the application is configured with the host compiler
+# and finds the system Qt — which fails late and confusingly, on a missing Qt
+# module rather than on being the wrong Qt entirely.
+#
 # If the host compiler is a gcc pre-release, host-side ports can fail with an
 # internal compiler error; CC and CXX are honoured here as everywhere else.
 cmake -S "${ROOT}" -B "${BUILD_DIR}" -GNinja \
 	-DWITH_VCPKG=ON \
 	-DVCPKG_TARGET_TRIPLET=wasm32-emscripten \
 	-DVCPKG_HOST_TRIPLET="${VCPKG_HOST_TRIPLET:-x64-linux}" \
+	-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="${ROOT}/cmake/EmscriptenToolchain.cmake" \
 	-DFETCHCONTENT_BASE_DIR="${DEPS_DIR}" \
 	-DCMAKE_BUILD_TYPE=Release
 
