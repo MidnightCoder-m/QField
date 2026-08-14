@@ -1,18 +1,16 @@
 #!/bin/bash
-# Build QField for WebAssembly and, with --serve, run it.
+# Build QField for WebAssembly.
 #
-#   ./scripts/build-for-wasm.sh                 build
-#   ./scripts/build-for-wasm.sh --serve         build, then serve on :8080
-#   ./scripts/build-for-wasm.sh --serve-only    serve what is already built
+#   ./scripts/build-for-wasm.sh                    build
+#   ./scripts/build-for-wasm.sh --serve            build, then serve on :8080
+#   ./scripts/build-for-wasm.sh --serve-only       serve what is already built
 #
-# Needs an Emscripten SDK. Point EMSDK at one, or let this install a private
-# copy under .emsdk in the build directory. The version is not a preference:
-# Qt 6.10 states which Emscripten it was built against, and mismatching gives
-# obscure ABI and link errors rather than a clear message.
+# Arguments after --serve or --serve-only go to scripts/serve-wasm.py.
 set -e
 
 ROOT=$(git rev-parse --show-toplevel)
 BUILD_DIR="${ROOT}/build-wasm32-emscripten"
+# Qt 6.10 names the Emscripten it was built against; another version gives ABI errors.
 EMSDK_VERSION=4.0.7
 
 if [ "${1:-}" = "--serve-only" ]; then
@@ -33,10 +31,7 @@ fi
 # shellcheck disable=SC1091
 source "${EMSDK}/emsdk_env.sh"
 
-# A second vcpkg checkout costs 3 GB and a full host-tool bootstrap for nothing:
-# buildtrees, packages and downloads are all suffixed per triplet, so a native
-# build and this one share them without colliding. Set QFIELD_VCPKG_DEPS to
-# choose a different one, or to this build's own directory to keep them apart.
+# vcpkg suffixes its caches per triplet, so a native build can share this checkout.
 DEPS_DIR="${QFIELD_VCPKG_DEPS:-}"
 if [ -z "${DEPS_DIR}" ]; then
 	if [ -d "${ROOT}/build-x64-linux/_deps/vcpkg-src" ]; then
@@ -47,14 +42,8 @@ if [ -z "${DEPS_DIR}" ]; then
 	fi
 fi
 
-# The chainload toolchain has to be named here as well as in the triplet. The
-# triplet's copy governs how the ports are built; this one governs QField
-# itself, and without it the application is configured with the host compiler
-# and finds the system Qt — which fails late and confusingly, on a missing Qt
-# module rather than on being the wrong Qt entirely.
-#
-# If the host compiler is a gcc pre-release, host-side ports can fail with an
-# internal compiler error; CC and CXX are honoured here as everywhere else.
+# vcpkg keys its binary cache on the host compiler: set CC and CXX as the native build did.
+# The triplet names the chainload toolchain for the ports; QField itself needs it here too.
 cmake -S "${ROOT}" -B "${BUILD_DIR}" -GNinja \
 	-DWITH_VCPKG=ON \
 	-DVCPKG_TARGET_TRIPLET=wasm32-emscripten \
