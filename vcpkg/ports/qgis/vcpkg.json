@@ -14,15 +14,29 @@
     "expat",
     {
       "name": "gdal",
+      "default-features": false,
+      "features": [
+        "expat",
+        "geos",
+        "sqlite3"
+      ],
+      "platform": "emscripten"
+    },
+    {
+      "name": "gdal",
       "features": [
         "archive",
         "poppler"
-      ]
+      ],
+      "platform": "!emscripten"
     },
     "geos",
     "gsl",
     "jhasse-poly2tri",
-    "libpq",
+    {
+      "name": "libpq",
+      "platform": "!emscripten"
+    },
     "libspatialindex",
     "libspatialite",
     {
@@ -72,7 +86,7 @@
         },
         {
           "name": "gles3",
-          "platform": "ios"
+          "platform": "ios | emscripten"
         },
         "gui",
         "harfbuzz",
@@ -107,7 +121,10 @@
       ]
     },
     "qtkeychain-qt6",
-    "qtlocation",
+    {
+      "name": "qtlocation",
+      "platform": "!emscripten"
+    },
     {
       "name": "qtmultimedia",
       "default-features": false,
