@@ -46,10 +46,16 @@ function(_qgis_core_add_dependency target package)
 endfunction()
 
 function(_find_and_link_library library target)
+  set(optional FALSE)
+  if(ARGC GREATER 2)
+    set(optional ${ARGV2})
+  endif()
   find_library(${library}-LIBRARY NAMES ${library} ${ADDITIONAL_ARGS})
   if(${library}-LIBRARY)
     message(STATUS "  Link ${target} interface to ${${library}-LIBRARY}")
     target_link_libraries(${target} INTERFACE ${${library}-LIBRARY})
+  elseif(${optional})
+    message(STATUS "  Skipping optional ${library}, not built for this target")
   else()
     message(FATAL_ERROR "Fail to find library ${library}.")
   endif()
@@ -81,19 +87,21 @@ if(QGIS_STATIC_MARKER_LIBRARY)
   _find_and_link_library(authmethod_pkcs12_a QGIS::Core)
   _find_and_link_library(authmethod_pkipaths_a QGIS::Core)
   _find_and_link_library(authmethod_planetary_computer_a QGIS::Core)
-  _find_and_link_library(provider_postgres_a QGIS::Core)
-  _find_and_link_library(provider_postgresraster_a QGIS::Core)
+  _find_and_link_library(provider_postgres_a QGIS::Core ${EMSCRIPTEN})
+  _find_and_link_library(provider_postgresraster_a QGIS::Core ${EMSCRIPTEN})
   _find_and_link_library(provider_wms_a QGIS::Core)
   _find_and_link_library(provider_delimitedtext_a QGIS::Core)
   _find_and_link_library(provider_arcgisfeatureserver_a QGIS::Core)
   _find_and_link_library(provider_arcgismapserver_a QGIS::Core)
-  _find_and_link_library(provider_spatialite_a QGIS::Core)
+  _find_and_link_library(provider_spatialite_a QGIS::Core ${EMSCRIPTEN})
   _find_and_link_library(provider_wfs_a QGIS::Core)
   _find_and_link_library(provider_wcs_a QGIS::Core)
   _find_and_link_library(provider_virtuallayer_a QGIS::Core)
 endif()
 
-_qgis_core_add_dependency(PostgreSQL::PostgreSQL PostgreSQL)
+if(NOT EMSCRIPTEN)
+  _qgis_core_add_dependency(PostgreSQL::PostgreSQL PostgreSQL)
+endif()
 
 # Relink qgis_core in the end, to make all the qgis plugins happy that need symbols from it
 _find_and_link_library(qgis_core QGIS::Core)
@@ -183,7 +191,11 @@ target_link_libraries(QGIS::Core INTERFACE PkgConfig::freexl)
 _qgis_core_add_dependency(Qt6Keychain::Qt6Keychain Qt6Keychain)
 
 
-find_package(Qt6 COMPONENTS Core Gui Network Xml Svg Concurrent Sql Positioning Core5Compat Multimedia)
+set(_qgis_qt_components Core Gui Network Xml Svg Concurrent Sql Core5Compat Multimedia)
+if(NOT EMSCRIPTEN)
+  list(APPEND _qgis_qt_components Positioning)
+endif()
+find_package(Qt6 COMPONENTS ${_qgis_qt_components})
 target_link_libraries(QGIS::Core INTERFACE
     Qt::Gui
     Qt::Core
@@ -192,11 +204,11 @@ target_link_libraries(QGIS::Core INTERFACE
     Qt::Svg
     Qt::Concurrent
     Qt::Sql
-    Qt::Positioning
+    $<$<NOT:$<BOOL:${EMSCRIPTEN}>>:Qt::Positioning>
     Qt::Core5Compat
     Qt::Multimedia
   )
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS" AND NOT EMSCRIPTEN)
   find_package(Qt6 COMPONENTS SerialPort)
   target_link_libraries(QGIS::Core INTERFACE
     Qt::SerialPort
