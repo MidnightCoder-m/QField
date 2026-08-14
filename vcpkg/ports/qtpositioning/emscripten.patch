@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt	2026-08-15 18:38:15.546596069 +0330
++++ b/CMakeLists.txt	2026-08-15 18:38:15.559927319 +0330
+@@ -18,8 +18,4 @@
+ find_package(Qt6 ${PROJECT_VERSION} QUIET CONFIG OPTIONAL_COMPONENTS Quick Qml Gui Widgets Network Test DBus SerialPort Svg QuickTest)
+ qt_internal_project_setup()
+ 
+-if(WASM)
+-    message(NOTICE "Skipping the build as the condition \"NOT WASM\" is not met.")
+-    return()
+-endif()
+ qt_build_repo()
