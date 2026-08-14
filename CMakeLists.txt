@@ -233,7 +233,7 @@ if(ANDROID)
   # See https://github.com/qt/qtbase/blob/39290c508e2c7fa816c6f79b3eb284adc0cad3c0/src/corelib/Qt6AndroidMacros.cmake#L1016C16-L1026
   get_filename_component(QT_ANDROID_PATH_CMAKE_DIR_${ANDROID_ABI} "${Qt6_DIR}/.." ABSOLUTE)
   message(STATUS "QT_ANDROID_PATH_CMAKE_DIR_${ANDROID_ABI}: ${QT_ANDROID_PATH_CMAKE_DIR_${ANDROID_ABI}}")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS" OR EMSCRIPTEN)
   # A caller may already know where the host tools are and pass QT_HOST_PATH in.
   # Deriving it unconditionally would overwrite that with
   # "${VCPKG_INSTALLED_DIR}/" whenever VCPKG_HOST_TRIPLET is not set, and

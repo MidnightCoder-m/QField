@@ -68,7 +68,10 @@
     },
     "qtdeclarative",
     "qtimageformats",
-    "qtlocation",
+    {
+      "name": "qtlocation",
+      "platform": "!emscripten"
+    },
     {
       "name": "qtmultimedia",
       "default-features": false,
@@ -80,6 +83,7 @@
         "qml"
       ]
     },
+    "qtpositioning",
     "qtquick3d",
     "qtremoteobjects",
     {
@@ -131,7 +135,10 @@
       ],
       "platform": "osx | linux | (windows & !arm & !uwp)"
     },
-    "spix-qt6",
+    {
+      "name": "spix-qt6",
+      "platform": "!emscripten"
+    },
     {
       "name": "tiff",
       "features": [
