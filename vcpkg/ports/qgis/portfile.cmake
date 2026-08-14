@@ -175,15 +175,10 @@ if(VCPKG_TARGET_IS_IOS)
 endif()
 
 if(VCPKG_TARGET_IS_EMSCRIPTEN)
-    # A browser has no raw sockets, no serial ports and no GNSS backend, so the
-    # postgres provider cannot work and libpq is not built for this triplet at
-    # all. Leaving WITH_POSTGRESQL at its default would fail to configure.
     list(APPEND QGIS_OPTIONS -DWITH_POSTGRESQL=FALSE)
     list(APPEND QGIS_OPTIONS -DWITH_QTSERIALPORT=FALSE)
     list(APPEND QGIS_OPTIONS -DWITH_QTPOSITIONING=FALSE)
-
-    # libspatialite has no wasm build; GeoPackage still works, it goes through
-    # GDAL rather than through the spatialite provider.
+    # FIXME libspatialite does build for wasm; this may be costing wfs and virtual layers for nothing.
     list(APPEND QGIS_OPTIONS -DWITH_SPATIALITE=FALSE)
 endif()
 
