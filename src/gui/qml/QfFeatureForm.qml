@@ -5,7 +5,6 @@ import QtQuick.Layouts
 import QtQml.Models
 import QtQml
 import QtCharts
-import QtWebView
 import org.qgis
 import org.qfield.core
 import org.qfield.gui
@@ -511,25 +510,13 @@ Page {
 
       onHtmlCodeChanged: {
         if (htmlItem === undefined) {
-          htmlItem = Qt.createQmlObject('import QtWebView;
-            WebView {
-              id: htmlItem;
-              height: 0;
-              opacity: 0;
-              anchors { top: parent.top; left: parent.left; right: parent.right; }
-              onLoadingChanged: {
-                if (!loading) {
-                  runJavaScript("document.body.offsetHeight", function(result) {
-                    anchors.left = parent.left;
-                    width = parent.width;
-                    height = (result + 18);
-                    opacity = 1.0;
-                  });
-                }
-              }
-            }', htmlContent);
+          // By name: the file is absent on platforms built without a web view.
+          const webViewComponent = Qt.createComponent("QfHtmlWebView.qml");
+          htmlItem = webViewComponent.status === Component.Ready ? webViewComponent.createObject(htmlContent) : null;
         }
-        htmlItem.loadHtml(htmlCode);
+        if (htmlItem) {
+          htmlItem.loadHtml(htmlCode);
+        }
       }
     }
   }

@@ -136,6 +136,10 @@ set(QFIELD_GUI_QML_FILES
     processingparameterwidgets/QfProcessingParameterSource.qml
     processingparameterwidgets/QfProcessingParameterWidgetBase.qml)
 
+# The only two files that import QtWebView. Their callers create them by name
+# and cope with the component being missing.
+list(APPEND QFIELD_GUI_QML_FILES QfHtmlWebView.qml QfWebView.qml)
+
 # A plain script, not a component to expose.
 set_source_files_properties(editorwidgets/ExternalResourceUtils.js
                             PROPERTIES QT_QML_SKIP_QMLDIR_ENTRY TRUE)

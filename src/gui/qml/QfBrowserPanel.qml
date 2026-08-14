@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtWebView
 import org.qfield.core
 import org.qfield.gui
 
@@ -59,34 +58,23 @@ QfPopup {
 
       anchors.fill: parent
       active: browserPanel.opened
-      sourceComponent: webViewComponent
-    }
-  }
+      // By name: the file is absent on platforms built without a web view.
+      source: "QfWebView.qml"
 
-  Component {
-    id: webViewComponent
-
-    WebView {
-      anchors.fill: parent
-      url: browserPanel.url
-
-      onLoadingChanged: {
-        if (!loading) {
-          anchors.fill = parent;
-          width = parent.width;
-          height = parent.height;
-          opacity = 1;
-        }
-      }
-      onCookieAdded: (domain, name) => {
-        browserPanel.browserCookies.push([domain, name]);
-      }
-
-      Component.onCompleted: {
+      onLoaded: {
+        item.url = Qt.binding(() => browserPanel.url);
         if (browserPanel.clearCookiesOnOpen) {
-          deleteAllCookies();
+          item.deleteAllCookies();
           browserPanel.clearCookiesOnOpen = false;
         }
+      }
+    }
+
+    Connections {
+      target: webViewLoader.item
+
+      function onCookieAdded(domain, name) {
+        browserPanel.browserCookies.push([domain, name]);
       }
     }
   }
