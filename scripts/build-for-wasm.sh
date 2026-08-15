@@ -14,7 +14,7 @@ BUILD_DIR="${ROOT}/build-wasm32-emscripten"
 EMSDK_VERSION=4.0.7
 
 if [ "${1:-}" = "--serve-only" ]; then
-	exec python3 "${ROOT}/scripts/serve-wasm.py" "${BUILD_DIR}/output/bin"
+	exec python3 "${ROOT}/scripts/serve-wasm.py" "${BUILD_DIR}/output/bin" "${@:2}"
 fi
 
 if [ -z "${EMSDK:-}" ]; then
@@ -58,7 +58,7 @@ echo
 echo "Built ${BUILD_DIR}/output/bin/qfield.wasm"
 
 if [ "${1:-}" = "--serve" ]; then
-	exec python3 "${ROOT}/scripts/serve-wasm.py" "${BUILD_DIR}/output/bin"
+	exec python3 "${ROOT}/scripts/serve-wasm.py" "${BUILD_DIR}/output/bin" "${@:2}"
 fi
 
 echo "Serve it with: ./scripts/build-for-wasm.sh --serve-only"
