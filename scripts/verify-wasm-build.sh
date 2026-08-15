@@ -36,8 +36,9 @@ failed=0
 cleanup() {
 	[ -n "${SERVER_PID:-}" ] && kill "${SERVER_PID}" 2>/dev/null
 	[ -n "${CHROME_PID:-}" ] && kill "${CHROME_PID}" 2>/dev/null
-	[ -n "${CHROME_PROFILE}" ] && rm -rf "${CHROME_PROFILE}"
+	# Chrome writes on its way out, so the profile only goes once it has gone.
 	wait 2>/dev/null
+	[ -n "${CHROME_PROFILE}" ] && rm -rf "${CHROME_PROFILE}"
 	return 0
 }
 trap cleanup EXIT
