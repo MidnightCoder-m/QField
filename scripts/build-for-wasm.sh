@@ -6,6 +6,8 @@
 #   ./scripts/build-for-wasm.sh --serve-only       serve what is already built
 #
 # Arguments after --serve or --serve-only go to scripts/serve-wasm.py.
+#
+# QFIELD_BUILD_JOBS caps the parallelism, for a machine that has to stay usable.
 set -e
 
 ROOT=$(git rev-parse --show-toplevel)
@@ -42,9 +44,18 @@ if [ -z "${DEPS_DIR}" ]; then
 	fi
 fi
 
+# In manifest mode vcpkg builds the ports during configure, so the cap has to be
+# in the environment by then; ninja takes it again for QField's own targets.
+NINJA_JOBS=()
+if [ -n "${QFIELD_BUILD_JOBS:-}" ]; then
+	export VCPKG_MAX_CONCURRENCY="${QFIELD_BUILD_JOBS}"
+	NINJA_JOBS=(-j "${QFIELD_BUILD_JOBS}")
+	echo "--- capped at ${QFIELD_BUILD_JOBS} parallel jobs"
+fi
+
 # vcpkg keys its binary cache on the host compiler: set CC and CXX as the native build did.
 # The triplet names the chainload toolchain for the ports; QField itself needs it here too.
-cmake -S "${ROOT}" -B "${BUILD_DIR}" -GNinja \
+nice -n 10 cmake -S "${ROOT}" -B "${BUILD_DIR}" -GNinja \
 	-DWITH_VCPKG=ON \
 	-DVCPKG_TARGET_TRIPLET=wasm32-emscripten \
 	-DVCPKG_HOST_TRIPLET="${VCPKG_HOST_TRIPLET:-x64-linux}" \
@@ -52,7 +63,7 @@ cmake -S "${ROOT}" -B "${BUILD_DIR}" -GNinja \
 	-DFETCHCONTENT_BASE_DIR="${DEPS_DIR}" \
 	-DCMAKE_BUILD_TYPE=Release
 
-cmake --build "${BUILD_DIR}"
+nice -n 10 cmake --build "${BUILD_DIR}" -- "${NINJA_JOBS[@]}"
 
 echo
 echo "Built ${BUILD_DIR}/output/bin/qfield.wasm"

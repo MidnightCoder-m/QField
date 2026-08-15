@@ -6,6 +6,8 @@
 #   ./scripts/verify-wasm-build.sh --no-build     check what is already built
 #   ./scripts/verify-wasm-build.sh --no-browser   skip the headless run
 #
+# QFIELD_BUILD_JOBS reaches build-for-wasm.sh and caps the parallelism.
+#
 # The browser stage uses a throwaway Chrome profile: QSettings lives in
 # localStorage, and a reused profile is how a fixed build keeps looking broken.
 set -u
@@ -65,6 +67,7 @@ echo "  branch  $(git -C "${ROOT}" rev-parse --abbrev-ref HEAD)"
 echo "  head    $(git -C "${ROOT}" log -1 --format='%h %s')"
 echo "  tree    $(git -C "${ROOT}" status --porcelain | wc -l) modified files"
 echo "  cc      ${CC:-<unset>} / ${CXX:-<unset>}"
+echo "  jobs    ${QFIELD_BUILD_JOBS:-all $(nproc) cores}"
 echo "  free    $(df -h --output=avail "${ROOT}" | tail -1 | tr -d ' ')"
 
 if [ -z "${CC:-}" ]; then
