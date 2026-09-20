@@ -20,6 +20,7 @@ ProgressBar {
 
   background: Shape {
     anchors.fill: parent
+    preferredRendererType: Shape.CurveRenderer
     ShapePath {
       strokeWidth: control.strokeWidth
       strokeColor: control.backgroundColor
@@ -38,6 +39,7 @@ ProgressBar {
 
   contentItem: Shape {
     anchors.fill: parent
+    preferredRendererType: Shape.CurveRenderer
     ShapePath {
       strokeWidth: control.strokeWidth
       strokeColor: control.color
