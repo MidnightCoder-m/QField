@@ -177,7 +177,7 @@ Page {
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ScrollBar.vertical: QfScrollBar {}
         contentWidth: qfieldCloudLogin.width
-        contentHeight: qfieldCloudLogin.height
+        contentHeight: qfieldCloudLogin.childrenRect.height
         clip: true
 
         QfCloudLogin {
@@ -1069,7 +1069,6 @@ Page {
 
     function onStatusChanged() {
       if (cloudConnection.status === QfCloudConnection.LoggedIn) {
-        // A new account first sees its welcome step
         if (!qfieldCloudLogin.isRegistrationVisible) {
           prepareCloudScreen();
         }
