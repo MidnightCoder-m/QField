@@ -10,6 +10,8 @@ set(VCPKG_ENV_PASSTHROUGH_UNTRACKED EMSDK EMSCRIPTEN PATH)
 if(DEFINED ENV{EMSDK})
   set(ENV{CC} "$ENV{EMSDK}/upstream/emscripten/emcc")
   set(ENV{CXX} "$ENV{EMSDK}/upstream/emscripten/em++")
+  # Emscripten.cmake sets this only inside CMake, and the toolchain keeps it out of the host ports.
+  set(ENV{PKG_CONFIG_LIBDIR} "$ENV{EMSDK}/upstream/emscripten/cache/sysroot/local/lib/pkgconfig:$ENV{EMSDK}/upstream/emscripten/cache/sysroot/lib/pkgconfig")
 endif()
 
 # Replaces vcpkg's own emscripten toolchain, so the compile flags live there too.

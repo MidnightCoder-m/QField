@@ -21,13 +21,23 @@ fi
 
 if [ -z "${EMSDK:-}" ]; then
 	EMSDK="${BUILD_DIR}/.emsdk"
-	if [ ! -d "${EMSDK}" ]; then
-		echo "--- installing Emscripten ${EMSDK_VERSION} into ${EMSDK}"
+	if [ ! -x "${EMSDK}/emsdk" ]; then
+		rm -rf "${EMSDK}"
 		git clone --depth 1 https://github.com/emscripten-core/emsdk.git "${EMSDK}"
+	fi
+	# Checked on every run, so an interrupted install or a version bump gets finished.
+	if [ ! -f "${EMSDK}/.emscripten" ] ||
+		! grep -qx "\"${EMSDK_VERSION}\"" "${EMSDK}/upstream/emscripten/emscripten-version.txt" 2>/dev/null; then
+		echo "--- installing Emscripten ${EMSDK_VERSION} into ${EMSDK}"
 		"${EMSDK}/emsdk" install "${EMSDK_VERSION}"
 		"${EMSDK}/emsdk" activate "${EMSDK_VERSION}"
 	fi
 	export EMSDK
+fi
+
+if [ ! -f "${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" ]; then
+	echo "No Emscripten in ${EMSDK}: run '${EMSDK}/emsdk install ${EMSDK_VERSION}' and activate it." >&2
+	exit 1
 fi
 
 # shellcheck disable=SC1091
@@ -39,6 +49,18 @@ if [ -z "${DEPS_DIR}" ]; then
 	if [ -d "${ROOT}/build-x64-linux/_deps/vcpkg-src" ]; then
 		DEPS_DIR="${ROOT}/build-x64-linux/_deps"
 		echo "--- reusing the vcpkg checkout in ${DEPS_DIR}"
+		# vcpkg keys its binary cache on the host compiler, so take the one the native build used.
+		NATIVE_CACHE="${ROOT}/build-x64-linux/CMakeCache.txt"
+		if [ -z "${CC:-}${CXX:-}" ] && [ -f "${NATIVE_CACHE}" ]; then
+			CC=$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' "${NATIVE_CACHE}")
+			CXX=$(sed -n 's/^CMAKE_CXX_COMPILER:FILEPATH=//p' "${NATIVE_CACHE}")
+			if [ -n "${CC}" ] && [ -n "${CXX}" ]; then
+				export CC CXX
+				echo "--- host compiler from the native build: ${CC}, ${CXX}"
+			else
+				unset CC CXX
+			fi
+		fi
 	else
 		DEPS_DIR="${BUILD_DIR}/_deps"
 	fi
@@ -53,7 +75,6 @@ if [ -n "${QFIELD_BUILD_JOBS:-}" ]; then
 	echo "--- capped at ${QFIELD_BUILD_JOBS} parallel jobs"
 fi
 
-# vcpkg keys its binary cache on the host compiler: set CC and CXX as the native build did.
 # The triplet names the chainload toolchain for the ports; QField itself needs it here too.
 nice -n 10 cmake -S "${ROOT}" -B "${BUILD_DIR}" -GNinja \
 	-DWITH_VCPKG=ON \

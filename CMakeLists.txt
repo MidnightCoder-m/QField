@@ -66,6 +66,11 @@ project(${APP_NAME}
   VERSION ${CLEAN_APP_VERSION}
 )
 
+# Held back by EmscriptenToolchain.cmake while vcpkg installed the ports.
+if(DEFINED QFIELD_EMSCRIPTEN_PKG_CONFIG_LIBDIR)
+  set(ENV{PKG_CONFIG_LIBDIR} "${QFIELD_EMSCRIPTEN_PKG_CONFIG_LIBDIR}")
+endif()
+
 GET_GIT_HEAD_REVISION(GIT_REFSPEC GIT_REV)
 
 message(STATUS "Building for git rev ${GIT_REV}")
