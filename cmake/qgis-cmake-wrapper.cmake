@@ -83,8 +83,10 @@ if(QGIS_STATIC_MARKER_LIBRARY)
   _find_and_link_library(authmethod_pkcs12_a QGIS::Core)
   _find_and_link_library(authmethod_pkipaths_a QGIS::Core)
   _find_and_link_library(authmethod_planetary_computer_a QGIS::Core)
-  _find_and_link_library(provider_postgres_a QGIS::Core)
-  _find_and_link_library(provider_postgresraster_a QGIS::Core)
+  if(NOT EMSCRIPTEN)
+    _find_and_link_library(provider_postgres_a QGIS::Core)
+    _find_and_link_library(provider_postgresraster_a QGIS::Core)
+  endif()
   _find_and_link_library(provider_wms_a QGIS::Core)
   _find_and_link_library(provider_delimitedtext_a QGIS::Core)
   _find_and_link_library(provider_arcgisfeatureserver_a QGIS::Core)
@@ -95,7 +97,9 @@ if(QGIS_STATIC_MARKER_LIBRARY)
   _find_and_link_library(provider_virtuallayer_a QGIS::Core)
 endif()
 
-_qgis_core_add_dependency(PostgreSQL::PostgreSQL PostgreSQL)
+if(NOT EMSCRIPTEN)
+  _qgis_core_add_dependency(PostgreSQL::PostgreSQL PostgreSQL)
+endif()
 
 # Relink qgis_core in the end, to make all the qgis plugins happy that need symbols from it
 _find_and_link_library(qgis_core QGIS::Core)
@@ -198,7 +202,7 @@ target_link_libraries(QGIS::Core INTERFACE
     Qt::Core5Compat
     Qt::Multimedia
   )
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS" AND NOT EMSCRIPTEN)
   find_package(Qt6 COMPONENTS SerialPort)
   target_link_libraries(QGIS::Core INTERFACE
     Qt::SerialPort
