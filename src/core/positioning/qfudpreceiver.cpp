@@ -125,11 +125,15 @@ void QfUdpReceiver::handleStateChanged( QAbstractSocket::SocketState state )
       break;
 
     case QAbstractSocket::BoundState:
+#if QT_CONFIG( networkinterface )
       mSocket->joinMulticastGroup( QHostAddress( mAddress ) );
+#endif
       break;
 
     case QAbstractSocket::ClosingState:
+#if QT_CONFIG( networkinterface )
       mSocket->leaveMulticastGroup( QHostAddress( mAddress ) );
+#endif
       break;
 
     case QAbstractSocket::HostLookupState:
