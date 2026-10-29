@@ -132,6 +132,8 @@ function(create_executable)
                ${CMAKE_SOURCE_DIR}/src/gui/qml ${CMAKE_SOURCE_DIR}/src/app/qml)
 
     set(PROJECT_NAME ${exe_TARGET})
+  elseif(EMSCRIPTEN)
+    qt_add_executable(${exe_TARGET} ${QFIELD_SOURCES})
   else()
     add_executable(${exe_TARGET} ${exe_EXTRA_ARGS} ${QFIELD_SOURCES})
   endif()
@@ -219,6 +221,26 @@ function(create_executable)
 
   if(WITH_VCPKG) # this triggers the initialisation of static qca ossl plugin.
     target_compile_definitions(${exe_TARGET} PUBLIC HAVE_STATIC_QCA_PLUGINS)
+  endif()
+
+  if(EMSCRIPTEN)
+    target_link_options(${exe_TARGET} PRIVATE -O1
+                        "SHELL:--preload-file ${SHARE_DIR}@/share")
+
+    add_dependencies(${exe_TARGET} deploy)
+
+    set(QFIELD_WASM_TARGET ${exe_TARGET})
+    configure_file("${CMAKE_SOURCE_DIR}/platform/wasm/qfield.html"
+                   "${CMAKE_CURRENT_BINARY_DIR}/${exe_TARGET}.html" @ONLY)
+    add_custom_target(
+      ${exe_TARGET}_wasm_shell ALL
+      COMMAND
+        ${CMAKE_COMMAND} -E copy
+        "${CMAKE_CURRENT_BINARY_DIR}/${exe_TARGET}.html"
+        "$<TARGET_FILE_DIR:${exe_TARGET}>/${exe_TARGET}.html"
+      COMMENT "Installing the QField wasm shell over Qt's generated one"
+      VERBATIM)
+    add_dependencies(${exe_TARGET}_wasm_shell ${exe_TARGET})
   endif()
 
   set_target_properties(${exe_TARGET} PROPERTIES AUTORCC TRUE)

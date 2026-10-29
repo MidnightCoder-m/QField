@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=0" />
+    <title>QField</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #ffffff;
+      }
+      #screen {
+        position: absolute;
+        inset: 0;
+      }
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font: 16px system-ui, sans-serif;
+        color: #80cc28;
+        background: #ffffff;
+      }
+      #overlay.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="screen"></div>
+    <div id="overlay">Loading QField…</div>
+
+    <script src="@QFIELD_WASM_TARGET@.js"></script>
+    <script src="qtloader.js"></script>
+    <script type="text/javascript">
+      (async () => {
+        const container = document.querySelector("#screen");
+        const overlay = document.querySelector("#overlay");
+
+        await new Promise(resolve => {
+          const check = () => {
+            const rect = container.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+              resolve();
+            } else {
+              requestAnimationFrame(check);
+            }
+          };
+          check();
+        });
+
+        const project = new URLSearchParams(window.location.search).get("project");
+
+        try {
+          await qtLoad({
+            arguments: project ? [project] : [],
+            qt: {
+              onLoaded: () => overlay.classList.add("hidden"),
+              onExit: exitData => {
+                overlay.classList.remove("hidden");
+                overlay.textContent = `QField exited: ${exitData.code ?? ""} ${exitData.text ?? ""}`;
+              },
+              entryFunction: window.@QFIELD_WASM_TARGET@_entry,
+              containerElements: [container]
+            }
+          });
+        } catch (e) {
+          console.error("[qfield] qtLoad failed:", e, e.stack);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -105,6 +105,11 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QFIELD_OUTPUT_DIRECTORY}/${QFIELD_BIN_SUBDIR}/$<0:>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QFIELD_OUTPUT_DIRECTORY}/${QFIELD_LIB_SUBDIR}/$<0:>)
+# Qt copies qtloader.js and the .html page into this folder without expanding generator
+# expressions, so with $<0:> they would land in a folder literally named "$<0:>".
+if(EMSCRIPTEN)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QFIELD_OUTPUT_DIRECTORY}/${QFIELD_BIN_SUBDIR})
+endif()
 
 set(WITH_CCACHE OFF CACHE BOOL "Build with ccache")
 if(WITH_CCACHE)
