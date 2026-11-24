@@ -1337,6 +1337,24 @@ void QfCloudProject::downloadFileConnections( const QString &fileKey )
 
     if ( !hasError )
     {
+      // Write the remaining data
+      const QByteArray remainingData = rawReply->readAll();
+      if ( !remainingData.isEmpty() )
+      {
+        const QString partialFileName = mDownloadFileTransfers[fileKey].partialFilePath;
+        QFile file( partialFileName );
+        const bool isWritten = file.open( QIODevice::WriteOnly | QIODevice::Append ) && file.write( remainingData ) == remainingData.size();
+        if ( !isWritten )
+        {
+          hasError = true;
+          errorMessageDetail = file.errorString();
+          errorMessage = tr( "File system error. Failed to write to partial file `%1`." ).arg( partialFileName );
+        }
+      }
+    }
+
+    if ( !hasError )
+    {
       mDownloadBytesReceived -= mDownloadFileTransfers[fileKey].bytesTransferred;
       mDownloadBytesReceived += mDownloadFileTransfers[fileKey].bytesTotal;
       mDownloadProgress = std::clamp( ( static_cast<double>( mDownloadBytesReceived ) / std::max( mDownloadBytesTotal, static_cast<qint64>( 1 ) ) ), 0., 1. );
