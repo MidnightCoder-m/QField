@@ -1,19 +1,14 @@
 diff --git a/src/core/auth/qgsauthmanager.cpp b/src/core/auth/qgsauthmanager.cpp
-index 254af95..2e14b6a 100644
+index 254af95..09743fe 100644
 --- a/src/core/auth/qgsauthmanager.cpp
 +++ b/src/core/auth/qgsauthmanager.cpp
-@@ -1013,14 +1013,6 @@ const QString QgsAuthManager::uniqueConfigId() const
-   QString id;
+@@ -1014,7 +1014,8 @@ const QString QgsAuthManager::uniqueConfigId() const
    int len = 7;
  
--  // Suppress warning: Potential leak of memory in qtimer.h [clang-analyzer-cplusplus.NewDeleteLeaks]
+   // Suppress warning: Potential leak of memory in qtimer.h [clang-analyzer-cplusplus.NewDeleteLeaks]
 -#ifndef __clang_analyzer__
--  // sleep just a bit to make sure the current time has changed
--  QEventLoop loop;
--  QTimer::singleShot( 3, &loop, &QEventLoop::quit );
--  loop.exec();
--#endif
--
-   while ( true )
-   {
-     id.clear();
++  // Not on wasm: the main thread can't block in a nested event loop
++#if !defined( __clang_analyzer__ ) && !defined( Q_OS_WASM )
+   // sleep just a bit to make sure the current time has changed
+   QEventLoop loop;
+   QTimer::singleShot( 3, &loop, &QEventLoop::quit );
