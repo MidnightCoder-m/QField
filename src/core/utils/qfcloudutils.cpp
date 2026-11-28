@@ -530,7 +530,11 @@ QString QfCloudUtils::subscriptionManagementUrl( const QString &serverUrl, const
 
 QString QfCloudUtils::deviceTimeZoneId()
 {
+#if QT_CONFIG( timezone )
   return QString::fromUtf8( QTimeZone::systemTimeZoneId() );
+#else
+  return QString();
+#endif
 }
 
 QList<QfCloudDelta> QfCloudUtils::parseDeltaJsonDocument( const QJsonDocument &jsonDocument, QString &errorString, bool &isValid )

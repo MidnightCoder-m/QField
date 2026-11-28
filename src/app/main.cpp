@@ -80,7 +80,7 @@ void initGraphics()
 
 void initAuthManager( QgsAuthManager *authManager )
 {
-#ifndef Q_OS_LINUX
+#if !defined( Q_OS_LINUX ) && !defined( Q_OS_WASM )
   if ( authManager->verifyMasterPassword( QStringLiteral( "qfield" ) ) )
   {
     // migrating authentication database
@@ -212,7 +212,11 @@ int main( int argc, char **argv )
 
   QtWebView::initialize();
 
+#ifdef Q_OS_WASM
+  QgsApplication &app = *new QgsApplication( argc, argv, true, profilePath, QStringLiteral( "mobile" ) );
+#else
   QgsApplication app( argc, argv, true, profilePath, QStringLiteral( "mobile" ) );
+#endif
 
   if ( !qfieldTranslatorLoaded || qfieldTranslator->isEmpty() )
   {
@@ -371,7 +375,11 @@ int main( int argc, char **argv )
   qputenv( "QT_QUICK_CONTROLS_STYLE", QByteArray( "Material" ) );
   qputenv( "QT_QUICK_CONTROLS_MATERIAL_VARIANT", QByteArray( "Dense" ) );
 
+#ifdef Q_OS_WASM
+  new QgisMobileapp( &app );
+#else
   QgisMobileapp mApp( &app );
+#endif
 
 #ifdef WITH_SPIX
   spix::AnyRpcServer server;

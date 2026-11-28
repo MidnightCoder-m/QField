@@ -62,10 +62,16 @@
         "qml"
       ]
     },
-    "qtconnectivity",
+    {
+      "name": "qtconnectivity",
+      "platform": "!emscripten"
+    },
     "qtdeclarative",
     "qtimageformats",
-    "qtlocation",
+    {
+      "name": "qtlocation",
+      "platform": "!emscripten"
+    },
     {
       "name": "qtmultimedia",
       "default-features": false,
@@ -77,6 +83,7 @@
         "qml"
       ]
     },
+    "qtpositioning",
     "qtquick3d",
     "qtremoteobjects",
     {
@@ -87,9 +94,12 @@
     },
     {
       "name": "qtserialport",
-      "platform": "!ios"
+      "platform": "!ios & !emscripten"
     },
-    "qtspeech",
+    {
+      "name": "qtspeech",
+      "platform": "!emscripten"
+    },
     {
       "name": "qttools",
       "host": true,
@@ -128,7 +138,10 @@
       ],
       "platform": "osx | linux | (windows & !arm & !uwp)"
     },
-    "spix-qt6",
+    {
+      "name": "spix-qt6",
+      "platform": "!emscripten"
+    },
     {
       "name": "tiff",
       "features": [
@@ -138,6 +151,9 @@
         "zstd"
       ]
     },
-    "valhalla"
+    {
+      "name": "valhalla",
+      "platform": "!emscripten"
+    }
   ]
 }

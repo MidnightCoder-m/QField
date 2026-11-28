@@ -14,6 +14,7 @@ vcpkg_from_github(
         include-qthread.patch
         processing.patch # Needed to avoid link issue with tinygltf (ATM embedded into QGIS) and _GEOSQueryCallback defined multiple times
         mesh.patch
+        authmanager-no-event-loop.patch
 )
 
 file(REMOVE ${SOURCE_PATH}/cmake/FindGDAL.cmake)
@@ -168,6 +169,12 @@ endif()
 
 if(VCPKG_TARGET_IS_IOS)
     list(APPEND QGIS_OPTIONS -DWITH_QTSERIALPORT=FALSE)
+endif()
+
+if(VCPKG_TARGET_IS_EMSCRIPTEN)
+    list(APPEND QGIS_OPTIONS -DWITH_POSTGRESQL=FALSE)
+    list(APPEND QGIS_OPTIONS -DWITH_QTSERIALPORT=FALSE)
+    list(APPEND QGIS_OPTIONS -DWITH_QTPOSITIONING=FALSE)
 endif()
 
 if(VCPKG_TARGET_IS_OSX OR VCPKG_TARGET_IS_IOS)

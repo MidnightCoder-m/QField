@@ -13,7 +13,7 @@
     {
       "name": "qtserialport",
       "default-features": false,
-      "platform": "!ios"
+      "platform": "!ios & !emscripten"
     }
   ],
   "features": {

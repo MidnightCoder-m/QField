@@ -67,6 +67,10 @@ project(${APP_NAME}
   VERSION ${CLEAN_APP_VERSION}
 )
 
+if(DEFINED QFIELD_EMSCRIPTEN_PKG_CONFIG_LIBDIR)
+  set(ENV{PKG_CONFIG_LIBDIR} "${QFIELD_EMSCRIPTEN_PKG_CONFIG_LIBDIR}")
+endif()
+
 GET_GIT_HEAD_REVISION(GIT_REFSPEC GIT_REV)
 
 message(STATUS "Building for git rev ${GIT_REV}")
@@ -101,16 +105,26 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QFIELD_OUTPUT_DIRECTORY}/${QFIELD_BIN_SUBDIR}/$<0:>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QFIELD_OUTPUT_DIRECTORY}/${QFIELD_LIB_SUBDIR}/$<0:>)
+# Qt copies qtloader.js and the .html page into this folder without expanding generator
+# expressions, so with $<0:> they would land in a folder literally named "$<0:>".
+if(EMSCRIPTEN)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QFIELD_OUTPUT_DIRECTORY}/${QFIELD_BIN_SUBDIR})
+endif()
 
 set(WITH_CCACHE OFF CACHE BOOL "Build with ccache")
 if(WITH_CCACHE)
   include(ccache)
 endif()
 
-set(WITH_BLUETOOTH ON CACHE BOOL "Enable bluetooth support")
-set(WITH_SERIALPORT ON CACHE BOOL "Enable serial port support")
-set(WITH_NFC ON CACHE BOOL "Enable NFC support")
-set(WITH_TEXTTOSPEECH ON CACHE BOOL "Enabled text to speech support")
+set(_qfield_qt_module_default ON)
+if(EMSCRIPTEN)
+  set(_qfield_qt_module_default OFF)
+endif()
+
+set(WITH_BLUETOOTH ${_qfield_qt_module_default} CACHE BOOL "Enable bluetooth support")
+set(WITH_SERIALPORT ${_qfield_qt_module_default} CACHE BOOL "Enable serial port support")
+set(WITH_NFC ${_qfield_qt_module_default} CACHE BOOL "Enable NFC support")
+set(WITH_TEXTTOSPEECH ${_qfield_qt_module_default} CACHE BOOL "Enabled text to speech support")
 
 set(SENTRY_DSN "" CACHE STRING "The sentry dsn for logging purpose. If not set, sentry will be disabled")
 set(SENTRY_ENV "" CACHE STRING "The sentry environment for logging purpose.")
@@ -218,7 +232,7 @@ if(ANDROID)
   # See https://github.com/qt/qtbase/blob/39290c508e2c7fa816c6f79b3eb284adc0cad3c0/src/corelib/Qt6AndroidMacros.cmake#L1016C16-L1026
   get_filename_component(QT_ANDROID_PATH_CMAKE_DIR_${ANDROID_ABI} "${Qt6_DIR}/.." ABSOLUTE)
   message(STATUS "QT_ANDROID_PATH_CMAKE_DIR_${ANDROID_ABI}: ${QT_ANDROID_PATH_CMAKE_DIR_${ANDROID_ABI}}")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS" OR EMSCRIPTEN)
   # A caller may already know where the host tools are and pass QT_HOST_PATH in.
   # Deriving it unconditionally would overwrite that with
   # "${VCPKG_INSTALLED_DIR}/" whenever VCPKG_HOST_TRIPLET is not set, and

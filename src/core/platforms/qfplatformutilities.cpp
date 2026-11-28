@@ -140,9 +140,13 @@ QString QfPlatformUtilities::systemSharedDataLocation() const
    * However it is possible to override this default logic through a environment variable named
    * QFIELD_SYSTEM_SHARED_DATA_PATH. If present, its value will be used as the return value instead.
   */
+#ifdef Q_OS_WASM
+  const static QString sharePath = QStringLiteral( "/share" );
+#else
   const static QString sharePath = QDir( QFileInfo( !QCoreApplication::applicationFilePath().isEmpty() ? QCoreApplication::applicationFilePath() : QCoreApplication::arguments().value( 0 ) ).canonicalPath()
                                          + QLatin1String( "/../share" ) )
                                      .absolutePath();
+#endif
   const static QString environmentSharePath = QString( qgetenv( "QFIELD_SYSTEM_SHARED_DATA_PATH" ) );
   return !environmentSharePath.isEmpty() ? QDir( environmentSharePath ).absolutePath() : sharePath;
 }
